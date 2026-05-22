@@ -1,0 +1,59 @@
+Bạn là một lập trình viên và kỹ sư tài liệu.  
+Hãy phân tích dự án full-stack này (frontend React + backend Java Spring Boot) và tạo README.md.  
+
+**Yêu cầu:**
+1. Rà soát tất cả folder và file, ghi chú chức năng chính dựa trên tên folder/file.
+2. Liệt kê tất cả thư viện dependencies trong:
+   - frontend/package.json
+   - backend/pom.xml
+   và giải thích ngắn gọn công dụng nếu có thể.
+3. Tạo README.md chuẩn Markdown với các mục:
+   - Tên dự án
+   - Mô tả ngắn
+   - Cấu trúc folder (frontend và backend), có ghi chú chức năng
+   - Dependencies chính
+   - Hướng dẫn cài đặt frontend và backend
+   - Ví dụ chạy
+   - License (MIT hoặc tuỳ chỉnh)
+
+**Cấu trúc dự án:**
+
+frontend/
+src/
+├── api
+├── pages
+├── layouts
+├── components
+├── store
+├── hooks
+├── services
+├── utils
+├── canvas
+├── three
+├── router
+├── App.jsx
+├── package.json
+├── package-lock.json
+└── main.jsx
+
+
+backend/
+src/main/java/com/architectai/
+├── controller
+├── service
+├── repository
+├── dto
+├── entity
+├── config
+├── ai
+├── planner
+├── pom.xml
+├── application.properties
+└── render
+
+
+**Lưu ý:**  
+- README.md phải rõ ràng, dễ đọc, Markdown chuẩn.  
+- Ghi chú chức năng từng folder/file nếu có thể.  
+- Liệt kê dependencies chính cùng mục đích ngắn gọn.  
+- Hãy viết README hoàn chỉnh, sẵn sàng dùng.  
