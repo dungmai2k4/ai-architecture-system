@@ -1,571 +1,181 @@
 # ArchitectAI
 
-AI-powered Vietnamese housing floorplan generator.
+MVP-first AI-powered Vietnamese housing floorplan generator.
 
-This README is intentionally MVP-first. The goal is to help one developer ship a working demo in 7 days, not design a future SaaS platform.
+The current implementation is the first working slice: a user enters a Vietnamese housing requirement, the backend extracts a structured `DesignBrief` with local Ollama, stores the result in MySQL, and the React frontend displays it.
 
-## 1. Project Overview
+The floorplan product direction is clear, but deterministic layout generation, SVG rendering, and 3D preview are not implemented yet.
 
-ArchitectAI turns natural-language Vietnamese housing requirements into a simple generated floorplan.
+## MVP Philosophy
 
-The app should:
-
-1. Accept a user requirement.
-2. Use AI to extract a structured `DesignBrief`.
-3. Validate basic Vietnamese housing rules in Java.
-4. Generate a simple `LayoutPlan`.
-5. Generate deterministic floorplan geometry in Java.
-6. Render an SVG floorplan.
-7. Show a basic 3D preview in the frontend.
-8. Optionally generate an AI render image.
-
-The system is a monolith:
-
-- One Spring Boot backend.
-- One React + Vite frontend.
-- One MySQL database.
-- OpenAI API for structured extraction and optional render image generation.
-
-## 2. MVP Scope
-
-Included in the MVP:
-
-- Natural-language requirement input.
-- AI-extracted `DesignBrief` JSON.
-- Basic Vietnamese housing rule checks.
-- Simple backend-generated `LayoutPlan`.
-- Backend-generated floorplan geometry using rectangles, rooms, walls, doors, and windows.
-- SVG floorplan output.
-- Basic frontend 3D preview from generated geometry.
-- Optional AI render prompt/image generation.
-- Local/dev-first setup.
-
-The MVP output should include:
+Keep the system small enough for one developer to ship quickly.
 
 ```text
-DesignBrief JSON
-LayoutPlan JSON
-Floorplan geometry JSON
-SVG floorplan
-Basic 3D preview
-Optional render prompt/image
+AI extracts intent.
+Java validates and stores deterministic data.
+SVG will visualize the floorplan.
+React displays the result.
 ```
 
-## 3. Explicitly Not Included
+Do not add platform architecture before the vertical slice works.
 
-Do not build these for the MVP:
-
-- Microservices.
-- Kafka, Redis, RabbitMQ, or any message broker.
-- Kubernetes.
-- SaaS architecture.
-- Multi-tenant design.
-- Organizations, workspaces, roles, billing, quotas, or subscriptions.
-- Enterprise IAM.
-- Enterprise observability stack.
-- RAG or vector database.
-- Complex worker systems.
-- Event-driven architecture.
-- Distributed workflow engines.
-- GPU orchestration.
-- Complex CAD exports.
-- AI-generated coordinates or geometry.
-
-These are intentionally removed so the project can ship.
-
-## 4. Simple Architecture Diagram
-
-```mermaid
-flowchart TD
-    User["User"] --> FE["React + Vite Frontend"]
-    FE --> API["Spring Boot Monolith"]
-    API --> DB[("MySQL")]
-    API --> OpenAI["OpenAI API"]
-    API --> Files["Local Storage: SVG / Images"]
-    API --> Scheduler["Optional Spring Scheduled Render Job"]
-    Scheduler --> OpenAI
-    Scheduler --> DB
-    Scheduler --> Files
-```
-
-There is no queue, no broker, and no separate worker service. The backend owns the workflow.
-
-## 5. Backend Structure
-
-Keep backend folders minimal and feature-oriented.
+## Architecture
 
 ```text
-backend/
-+-- pom.xml
-+-- mvnw
-+-- mvnw.cmd
-+-- src/
-    +-- main/
-    |   +-- java/com/architectai/
-    |   |   +-- ArchitectAiBackendApplication.java
-    |   |   +-- config/
-    |   |   |   +-- CorsConfig.java
-    |   |   |   +-- OpenAiConfig.java
-    |   |   |   +-- StorageConfig.java
-    |   |   +-- design/
-    |   |   |   +-- DesignController.java
-    |   |   |   +-- DesignService.java
-    |   |   |   +-- DesignProject.java
-    |   |   |   +-- DesignOutput.java
-    |   |   |   +-- DesignRepository.java
-    |   |   |   +-- DesignOutputRepository.java
-    |   |   +-- ai/
-    |   |   |   +-- OpenAiClient.java
-    |   |   |   +-- RequirementExtractor.java
-    |   |   |   +-- RenderPromptGenerator.java
-    |   |   +-- rules/
-    |   |   |   +-- VietnameseRuleEngine.java
-    |   |   |   +-- RuleResult.java
-    |   |   +-- layout/
-    |   |   |   +-- LayoutPlanner.java
-    |   |   |   +-- LayoutPlan.java
-    |   |   +-- floorplan/
-    |   |   |   +-- GeometryGenerator.java
-    |   |   |   +-- FloorplanModel.java
-    |   |   |   +-- SvgRenderer.java
-    |   |   +-- render/
-    |   |   |   +-- RenderJob.java
-    |   |   |   +-- RenderJobRepository.java
-    |   |   |   +-- RenderJobScheduler.java
-    |   |   +-- artifact/
-    |   |       +-- ArtifactController.java
-    |   |       +-- LocalArtifactStorage.java
-    |   +-- resources/
-    |       +-- application.properties
-    |       +-- prompts/
-    |           +-- design-brief-extraction.md
-    |           +-- render-prompt.md
-    +-- test/java/com/architectai/
-        +-- BackendApplicationTests.java
+User
+  |
+  v
+React + Vite frontend
+  |
+  | POST /api/designs
+  v
+Spring Boot backend
+  |
+  +-- Load extraction prompt
+  +-- Call local Ollama
+  +-- Parse DesignBrief JSON
+  +-- Validate site dimensions
+  +-- Save project, output, and AI log
+  |
+  v
+MySQL
 ```
 
-Prompt files:
+There is no queue, worker, scheduler, Docker setup, migration system, or CI pipeline in the current app.
+
+## Data Flow
+
+1. User submits a house requirement in the React form.
+2. Frontend calls `POST http://localhost:8080/api/designs`.
+3. Backend creates a `design_projects` row with status `PENDING`.
+4. Backend calls Ollama using `backend/src/main/resources/prompts/design-brief-extraction.md`.
+5. Backend parses the AI response into `DesignBrief`.
+6. Backend validates width and depth are greater than `0`.
+7. Backend saves `design_outputs.design_brief_json`.
+8. Backend saves an `ai_calls` log row.
+9. Project becomes `COMPLETED` or `FAILED`.
+10. Frontend displays the response.
+
+## Tech Stack
+
+Backend:
+
+- Java 21
+- Spring Boot 4.0.6
+- Spring Web MVC
+- Spring Data JPA
+- MySQL
+- Jackson
+- Ollama local API
+
+Frontend:
+
+- React 19
+- Vite 8
+- Tailwind CSS 4
+- ESLint 10
+- Fetch API for the implemented backend call
+
+Installed but not used by the current frontend screen:
+
+- Three.js / React Three Fiber / Drei
+- Konva / React Konva
+- Axios
+- Lucide React
+- React Router
+
+## Folder Overview
 
 ```text
-backend/src/main/resources/prompts/
-+-- design-brief-extraction.md
-+-- render-prompt.md
+.
++-- backend/                         # Spring Boot API, AI extraction, JPA persistence
+|   +-- READMEbackend.md             # Backend implementation details
+|   +-- src/main/java/com/architectai/
+|   |   +-- ai/                      # Ollama extraction and AI call logging
+|   |   +-- config/                  # ObjectMapper configuration
+|   |   +-- design/                  # Design API, service, DTOs, entities
+|   +-- src/main/resources/
+|       +-- application.properties   # MySQL, port, Ollama settings
+|       +-- prompts/                 # AI extraction prompt
++-- frontend/                        # React + Vite app
+|   +-- READMEfrontend.md            # Frontend implementation details
+|   +-- src/
+|       +-- features/design/         # Active design form/result workflow
+|       +-- components/              # Unused chat-style components
++-- prompts/                         # Extra prompt note file
++-- docs/                            # Empty
++-- assests/                         # Empty, misspelled folder name
++-- .github/java-upgrade/            # Tool hook scripts, not app CI
++-- README.md
 ```
 
-Avoid deep layers like `command`, `event`, `workflow`, `provider`, `strategy`, or `orchestration` unless the code genuinely needs them.
+## Frontend and Backend Contract
 
-## 6. Frontend Structure
+The active frontend screen calls one backend endpoint:
 
-Keep the frontend as one workflow screen.
-
-```text
-frontend/
-+-- package.json
-+-- package-lock.json
-+-- vite.config.js
-+-- index.html
-+-- eslint.config.js
-+-- public/
-+-- favicon.svg
-|   +-- icons.svg
-+-- src/
-    +-- main.jsx
-    +-- App.jsx
-    +-- index.css
-    +-- api/
-    |   +-- designApi.js
-    +-- features/
-    |   +-- design/
-    |       +-- DesignPage.jsx
-    |       +-- RequirementForm.jsx
-    |       +-- ProgressPanel.jsx
-    |       +-- ResultPanel.jsx
-    +-- canvas/
-    |   +-- SvgFloorplanViewer.jsx
-    +-- three/
-    |   +-- Basic3DPreview.jsx
-    +-- components/
-        +-- ErrorMessage.jsx
-        +-- LoadingState.jsx
+```http
+POST /api/designs
 ```
 
-No complex state management is required. Use React state and a small polling hook if image rendering is running.
-
-## 7. Data Flow
-
-Main generation flow:
-
-```text
-1. User submits natural-language requirement.
-2. Backend creates a design project row.
-3. Backend calls OpenAI to extract DesignBrief JSON.
-4. Backend validates DesignBrief.
-5. Java rule engine checks basic Vietnamese housing rules.
-6. Java layout planner creates a simple LayoutPlan.
-7. Java geometry generator creates rooms, walls, doors, and windows.
-8. Java SVG renderer creates an SVG floorplan.
-9. Backend saves JSON outputs and SVG file.
-10. Frontend displays DesignBrief, rule warnings, SVG, and 3D preview.
-11. Optional: user starts AI render image generation.
-```
-
-Important boundary:
-
-```text
-AI extracts and suggests.
-Java validates and generates geometry.
-Frontend displays.
-```
-
-## 8. API Endpoints
-
-Keep the API small.
-
-| Method | Endpoint | Purpose |
-| --- | --- | --- |
-| `POST` | `/api/designs` | Submit requirement and generate the main MVP result. |
-| `GET` | `/api/designs/{id}` | Load project status, JSON outputs, SVG path, and render status. |
-| `POST` | `/api/designs/{id}/render` | Start optional AI render image generation. |
-| `GET` | `/api/artifacts/{filename}` | Serve generated SVG or image files. |
-
-No versioning is needed for the 7-day MVP unless already present.
-
-Example request:
+Request:
 
 ```json
 {
-  "requirement": "Nha pho 5x20m, 2 tang, 3 phong ngu, 2 WC, phong cach hien dai, co san truoc nho."
+  "requirement": "Nha pho 5x20m, 2 tang, 3 phong ngu, 2 WC, phong cach hien dai."
 }
 ```
 
-Example response:
+Response:
 
 ```json
 {
   "projectId": 1,
   "status": "COMPLETED",
-  "designBrief": {},
-  "rules": [],
-  "layoutPlan": {},
-  "floorplan": {},
-  "svgUrl": "/api/artifacts/floorplan-1.svg",
-  "renderImageUrl": null
+  "designBrief": {
+    "siteWidthMeters": 5,
+    "siteDepthMeters": 20,
+    "floors": 2,
+    "bedrooms": 3,
+    "bathrooms": 2,
+    "style": "modern",
+    "rooms": ["living", "kitchen", "bedroom", "bathroom"],
+    "preferences": [],
+    "constraints": []
+  },
+  "error": null
 }
 ```
 
-## 9. Database Schema
+## Quick Local Setup
 
-Use 3 tables for the core MVP. Add the fourth only if optional image rendering is implemented.
+Requirements:
 
-### `design_projects`
-
-```text
-id
-title
-raw_requirement
-status
-created_at
-updated_at
-```
-
-### `design_outputs`
-
-```text
-id
-project_id
-design_brief_json
-rule_result_json
-layout_plan_json
-floorplan_json
-svg_path
-render_prompt
-render_image_path
-created_at
-updated_at
-```
-
-### `ai_calls`
-
-```text
-id
-project_id
-stage
-model
-prompt_text
-response_text
-success
-error_message
-created_at
-```
-
-### `render_jobs` optional
-
-```text
-id
-project_id
-status
-error_message
-created_at
-started_at
-completed_at
-```
-
-Store JSON as MySQL `JSON` if convenient. Otherwise use `TEXT` for speed during the MVP.
-
-## 10. AI Usage Rules
-
-AI is used only for:
-
-- Extracting `DesignBrief` from natural language.
-- Optionally suggesting room adjacency or layout intent.
-- Generating render prompts.
-- Optionally generating render images.
-
-AI must not:
-
-- Generate final coordinates.
-- Generate final walls.
-- Generate final room rectangles.
-- Decide final dimensions without backend validation.
-- Be the only place where Vietnamese rules exist.
-
-Use strict JSON output.
-
-Recommended `DesignBrief` shape:
-
-```json
-{
-  "siteWidthMeters": 5,
-  "siteDepthMeters": 20,
-  "floors": 2,
-  "bedrooms": 3,
-  "bathrooms": 2,
-  "style": "modern",
-  "rooms": ["living", "kitchen", "bedroom", "bathroom"],
-  "preferences": ["small front yard"],
-  "constraints": []
-}
-```
-
-If AI output is invalid, return a useful error or use a simple fallback. Do not continue with unvalidated JSON.
-
-## 11. Rule Engine
-
-The Vietnamese rule engine is deterministic Java code.
-
-Start with practical warnings:
-
-- Site dimensions must be present and positive.
-- Total requested room area should fit inside available floor area.
-- Multi-floor houses need stairs.
-- Bedrooms should have reasonable minimum area.
-- Bathrooms should be reachable from circulation.
-- Kitchen should have ventilation or a window suggestion.
-- Living room should connect near the entrance.
-- Front yard or setback is only a warning if street context is provided.
-
-Rule result example:
-
-```json
-{
-  "code": "STAIRS_REQUIRED",
-  "severity": "WARNING",
-  "message": "A house with more than one floor should include stairs.",
-  "suggestion": "Add a compact stair near the side wall."
-}
-```
-
-Rules should warn first. Do not block generation unless the input is impossible, such as missing site dimensions.
-
-## 12. Floorplan Generation Approach
-
-The backend generates geometry deterministically.
-
-Simple approach for MVP:
-
-1. Treat the site as a rectangle.
-2. Split each floor into rectangular zones.
-3. Place rooms by priority:
-   - Entrance/living near front.
-   - Kitchen/dining behind living.
-   - Stairs near side or center for multi-floor houses.
-   - Bathrooms near stairs or bedrooms.
-   - Bedrooms toward quieter rear/upper floors.
-4. Generate walls from room rectangle boundaries.
-5. Add simple doors between adjacent rooms.
-6. Add windows on exterior walls.
-7. Render labels and dimensions in SVG.
-
-This will not produce perfect architecture. It will produce a working, explainable MVP.
-
-Core model:
-
-```text
-Floorplan
-- siteWidth
-- siteDepth
-- floors[]
-
-Floor
-- level
-- rooms[]
-- walls[]
-- doors[]
-- windows[]
-
-Room
-- id
-- name
-- x
-- y
-- width
-- depth
-```
-
-## 13. 3D Preview Approach
-
-The 3D preview is frontend-only.
-
-Use the generated `floorplan_json`:
-
-- Render floor slab.
-- Extrude walls to a fixed height.
-- Use basic colors per room type.
-- Add simple orbit controls.
-- No GLB export.
-- No backend 3D rendering.
-- No physics or advanced materials.
-
-The 3D view is a preview, not a production renderer.
-
-## 14. Async Mechanism
-
-Everything should be synchronous except optional AI image rendering.
-
-Synchronous:
-
-- Requirement extraction.
-- Rule validation.
-- Layout planning.
-- Geometry generation.
-- SVG generation.
-
-Optional async:
-
-- AI render image generation.
-
-Implementation:
-
-```text
-POST /api/designs/{id}/render
--> insert render_jobs row with PENDING
-
-RenderJobScheduler every few seconds:
--> find one PENDING job
--> mark RUNNING
--> call image API
--> save image path
--> mark COMPLETED or FAILED
-```
-
-Use Spring `@Scheduled`. Do not add Kafka, Redis, RabbitMQ, or a worker service.
-
-## 15. 7-Day Build Plan
-
-### Day 1: Project and API skeleton
-
-- Create minimal backend packages.
-- Create database tables.
-- Implement `POST /api/designs`.
-- Implement `GET /api/designs/{id}`.
-- Create frontend design page and input form.
-
-### Day 2: DesignBrief extraction
-
-- Add OpenAI client.
-- Write `design-brief-extraction.md`.
-- Extract strict JSON.
-- Validate and store `DesignBrief`.
-- Display extracted brief in frontend.
-
-### Day 3: Rule engine
-
-- Implement `VietnameseRuleEngine`.
-- Return warnings and suggestions.
-- Store rule results.
-- Display rule results in frontend.
-
-### Day 4: Layout planner
-
-- Generate simple backend `LayoutPlan`.
-- Use AI only for optional room adjacency suggestions.
-- Add fallback layout logic.
-- Store and display layout JSON.
-
-### Day 5: Geometry and SVG
-
-- Generate deterministic room rectangles.
-- Generate walls, doors, and windows.
-- Render SVG.
-- Save SVG locally.
-- Display SVG in frontend.
-
-### Day 6: 3D preview
-
-- Build `Basic3DPreview`.
-- Extrude walls from floorplan JSON.
-- Add basic camera/orbit controls.
-- Add tabs or panels for JSON, SVG, and 3D.
-
-### Day 7: Optional render image and polish
-
-- Generate render prompt from final design.
-- Add optional render image job.
-- Add polling for render status.
-- Improve loading/error states.
-- Test with 3-5 realistic Vietnamese house prompts.
-
-## 16. MVP Principles
-
-Follow these rules while building:
-
-- Ship one working vertical slice before improving architecture.
-- Keep one backend and one frontend.
-- Keep AI outputs validated.
-- Keep geometry deterministic.
-- Keep rules in Java.
-- Keep async limited to optional image rendering.
-- Prefer direct method calls over workflows, events, or queues.
-- Prefer local storage before object storage.
-- Prefer polling before WebSockets.
-- Prefer simple tables before infrastructure.
-- Prefer readable code over abstractions.
-
-Final rule:
-
-```text
-AI understands the user's request.
-Java builds the floorplan.
-React displays the result.
-```
-
-## Local Setup
-
-### Requirements
-
-- Node.js 18+
 - Java 21+
+- Node.js 18+
 - MySQL 8+
-- OpenAI API key
+- Ollama
+- Ollama model `qwen2.5:3b`
 
-### Backend
+Create the database:
+
+```sql
+CREATE DATABASE architect_ai;
+```
+
+Pull the model:
 
 ```bash
-cd backend
-mvn spring-boot:run
+ollama pull qwen2.5:3b
 ```
 
-### Frontend
+Run backend:
+
+```powershell
+cd backend
+.\mvnw.cmd spring-boot:run
+```
+
+Run frontend:
 
 ```bash
 cd frontend
@@ -573,12 +183,131 @@ npm install
 npm run dev
 ```
 
-### Database
+Default URLs:
 
-```sql
-CREATE DATABASE architect_ai;
+```text
+Backend:  http://localhost:8080
+Frontend: http://localhost:5173
+Ollama:   http://localhost:11434/api/generate
 ```
 
-## License
+## Core Constraints
 
-MIT.
+Keep the MVP simple:
+
+- One Spring Boot backend.
+- One React frontend.
+- One MySQL database.
+- Local Ollama for AI extraction.
+- Java owns validation and future deterministic generation.
+- React displays backend output.
+
+Do not add:
+
+- Microservices
+- Kafka
+- Redis
+- RabbitMQ
+- Kubernetes
+- Service mesh
+- Event-driven systems
+- Vector databases
+- RAG architecture
+- Multi-tenant systems
+- Workflow engines
+- Enterprise observability
+
+## 7-Day Build Plan
+
+### Day 1: Project and API skeleton
+- Setup backend, frontend, MySQL, Ollama/OpenAI local dev
+- Create minimal backend packages
+- Create database tables
+- Implement `POST /api/designs`
+- Implement `GET /api/designs/{id}`
+- Create frontend design page and input form
+- Ensure end-to-end request works (even if output is mock)
+
+---
+
+### Day 2: DesignBrief extraction
+- Add OpenAI/Ollama client
+- Write `design-brief-extraction.md` prompt
+- Extract strict JSON `DesignBrief`
+- Add validation + fallback handling
+- Store `DesignBrief` in DB
+- Display extracted result in frontend
+
+---
+
+### Day 3: Rule engine
+- Implement `VietnameseRuleEngine`
+- Add deterministic checks (area, floors, stairs, etc.)
+- Generate warnings (not blocking)
+- Store `rule_result_json` in `design_outputs`
+- Show rule warnings in UI
+
+---
+
+### Day 4: Layout planner
+- Implement simple Java layout planner
+- Generate `LayoutPlan` deterministically
+- (Optional) use AI only for hints, not final layout
+- Store `layout_plan_json`
+- Display layout JSON in frontend
+
+---
+
+### Day 5: Geometry + SVG
+- Generate deterministic floorplan geometry:
+  - rooms
+  - walls
+  - doors
+  - windows
+- Store `floorplan_json`
+- Render SVG in backend
+- Save SVG file locally
+- Display SVG in frontend
+
+---
+
+### Day 6: 3D preview
+- Build `Basic3DPreview` (Three.js)
+- Render from `floorplan_json`
+- Simple wall extrusion + orbit controls
+- Add tabs: JSON / SVG / 3D
+
+---
+
+### Day 7: Polish + optional render
+- Generate render prompt from final design
+- Optional image generation job
+- Improve loading + error states
+- Test with 3–5 Vietnamese house prompts
+- Fix obvious UX issues only (no refactor)
+
+## Definition of Done
+
+Current slice is done when:
+
+- The user can submit a Vietnamese requirement from the frontend.
+- Backend creates a project.
+- Ollama returns parseable `DesignBrief` JSON.
+- Backend validates site dimensions.
+- Backend saves the design brief and AI call log.
+- Frontend displays project id, status, and extracted fields.
+- Failures return visible errors.
+
+Full MVP is done when:
+
+- Java generates rule warnings.
+- Java generates a layout plan.
+- Java generates floorplan geometry.
+- Java renders SVG from geometry.
+- React displays the brief, warnings, SVG, and simple 3D preview.
+- AI never generates final coordinates.
+
+## More Documentation
+
+- Backend details: [backend/READMEbackend.md](backend/READMEbackend.md)
+- Frontend details: [frontend/READMEfrontend.md](frontend/READMEfrontend.md)
