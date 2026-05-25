@@ -10,6 +10,13 @@ function DesignPage() {
 
   async function handleSubmit(event) {
     event.preventDefault();
+
+    if (!requirement.trim()) {
+      setError("Vui lòng nhập yêu cầu thiết kế trước khi gửi.");
+      setResult(null);
+      return;
+    }
+
     setError("");
     setResult(null);
     setLoading(true);
@@ -20,17 +27,17 @@ function DesignPage() {
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ requirement }),
+        body: JSON.stringify({ requirement: requirement.trim() }),
       });
 
-      const data = await response.json();
+      const data = await readJsonResponse(response);
       if (!response.ok) {
-        throw new Error(data.error || "Request failed");
+        throw new Error(data?.error || "Request failed");
       }
 
       setResult(data);
     } catch (err) {
-      setError(err.message);
+      setError(err instanceof Error ? err.message : "Unexpected error");
     } finally {
       setLoading(false);
     }
@@ -57,6 +64,19 @@ function DesignPage() {
       </section>
     </main>
   );
+}
+
+async function readJsonResponse(response) {
+  const rawBody = await response.text();
+  if (!rawBody) {
+    return null;
+  }
+
+  try {
+    return JSON.parse(rawBody);
+  } catch {
+    return { error: rawBody };
+  }
 }
 
 export default DesignPage;
