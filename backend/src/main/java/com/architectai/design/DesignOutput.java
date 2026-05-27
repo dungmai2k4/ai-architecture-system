@@ -92,4 +92,44 @@ public class DesignOutput {
     public void setRuleResultJson(String ruleResultJson) {
         this.ruleResultJson = ruleResultJson;
     }
+
+    public String getLayoutPlanJson() {
+        return layoutPlanJson;
+    }
+
+    public void setLayoutPlanJson(String layoutPlanJson) {
+        this.layoutPlanJson = layoutPlanJson;
+    }
+
+    public String getFloorplanJson() {
+        return floorplanJson;
+    }
+
+    public void setFloorplanJson(String floorplanJson) {
+        this.floorplanJson = floorplanJson;
+    }
+
+    public String getSvgPath() {
+        return svgPath;
+    }
+
+    public void setSvgPath(String svgPath) {
+        this.svgPath = svgPath;
+    }
+
+    public String getRenderPrompt() {
+        return renderPrompt;
+    }
+
+    public void setRenderPrompt(String renderPrompt) {
+        this.renderPrompt = renderPrompt;
+    }
+
+    public String getRenderImagePath() {
+        return renderImagePath;
+    }
+
+    public void setRenderImagePath(String renderImagePath) {
+        this.renderImagePath = renderImagePath;
+    }
 }
