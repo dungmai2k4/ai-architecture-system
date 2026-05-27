@@ -1,3 +1,7 @@
+import { useMemo, useState } from "react";
+import { Canvas } from "@react-three/fiber";
+import { OrbitControls } from "@react-three/drei";
+
 function ResultPanel({ result }) {
   const designBrief = result?.designBrief;
   const warnings = result?.ruleResult?.warnings ?? [];
@@ -40,7 +44,6 @@ function ResultPanel({ result }) {
         </div>
       )}
 
-
       {layoutPlan && (
         <div className="mt-4 rounded-md border border-emerald-200 bg-emerald-50 p-4">
           <h3 className="font-semibold text-emerald-800">Gợi ý bố trí sơ bộ</h3>
@@ -53,18 +56,7 @@ function ResultPanel({ result }) {
         </div>
       )}
 
-
-      {floorplan && (
-        <div className="mt-4 rounded-md border border-cyan-200 bg-cyan-50 p-4">
-          <h3 className="font-semibold text-cyan-800">Mặt bằng sơ bộ tầng 1</h3>
-          <p className="mt-1 text-sm text-cyan-900">
-            Kích thước: {floorplan.siteWidth}m x {floorplan.siteDepth}m
-          </p>
-          <div className="mt-3 overflow-auto rounded border border-cyan-100 bg-white p-2">
-            <div dangerouslySetInnerHTML={{ __html: floorplan.svg }} />
-          </div>
-        </div>
-      )}
+      {floorplan && <FloorplanSection floorplan={floorplan} />}
 
       {warnings.length > 0 && (
         <div className="mt-4 rounded-md border border-amber-200 bg-amber-50 p-4">
@@ -77,6 +69,92 @@ function ResultPanel({ result }) {
         </div>
       )}
     </section>
+  );
+}
+
+function FloorplanSection({ floorplan }) {
+  const [activeTab, setActiveTab] = useState("svg");
+  const tabs = [
+    { id: "svg", label: "SVG" },
+    { id: "json", label: "JSON" },
+    { id: "preview3d", label: "3D" },
+  ];
+
+  return (
+    <div className="mt-4 rounded-md border border-cyan-200 bg-cyan-50 p-4">
+      <h3 className="font-semibold text-cyan-800">Mặt bằng sơ bộ tầng 1</h3>
+      <p className="mt-1 text-sm text-cyan-900">
+        Kích thước: {floorplan.siteWidth}m x {floorplan.siteDepth}m
+      </p>
+
+      <div className="mt-3 flex gap-2">
+        {tabs.map((tab) => (
+          <button
+            key={tab.id}
+            type="button"
+            onClick={() => setActiveTab(tab.id)}
+            className={`rounded border px-3 py-1 text-sm ${
+              activeTab === tab.id
+                ? "border-cyan-700 bg-cyan-700 text-white"
+                : "border-cyan-200 bg-white text-cyan-800"
+            }`}
+          >
+            {tab.label}
+          </button>
+        ))}
+      </div>
+
+      {activeTab === "svg" && (
+        <div className="mt-3 overflow-auto rounded border border-cyan-100 bg-white p-2">
+          <div dangerouslySetInnerHTML={{ __html: floorplan.svg }} />
+        </div>
+      )}
+
+      {activeTab === "json" && (
+        <pre className="mt-3 max-h-72 overflow-auto rounded border border-cyan-100 bg-white p-3 text-xs text-slate-700">
+          {JSON.stringify(floorplan, null, 2)}
+        </pre>
+      )}
+
+      {activeTab === "preview3d" && (
+        <div className="mt-3 h-80 overflow-hidden rounded border border-cyan-100 bg-slate-950">
+          <Basic3DPreview floorplan={floorplan} />
+        </div>
+      )}
+    </div>
+  );
+}
+
+function Basic3DPreview({ floorplan }) {
+  const roomMeshes = useMemo(
+    () =>
+      (floorplan.rooms ?? []).map((room) => ({
+        key: room.name,
+        width: room.width,
+        depth: room.depth,
+        x: room.x + room.width / 2 - floorplan.siteWidth / 2,
+        z: room.y + room.depth / 2 - floorplan.siteDepth / 2,
+      })),
+    [floorplan],
+  );
+
+  return (
+    <Canvas camera={{ position: [0, 14, 14], fov: 52 }}>
+      <ambientLight intensity={0.65} />
+      <directionalLight position={[8, 14, 10]} intensity={0.8} />
+      <gridHelper args={[24, 24, "#334155", "#1e293b"]} position={[0, 0, 0]} />
+      {roomMeshes.map((room) => (
+        <mesh key={room.key} position={[room.x, 0.2, room.z]}>
+          <boxGeometry args={[room.width, 0.4, room.depth]} />
+          <meshStandardMaterial color="#22d3ee" opacity={0.7} transparent />
+        </mesh>
+      ))}
+      <mesh position={[0, -0.05, 0]} rotation={[-Math.PI / 2, 0, 0]}>
+        <planeGeometry args={[floorplan.siteWidth, floorplan.siteDepth]} />
+        <meshStandardMaterial color="#0f172a" />
+      </mesh>
+      <OrbitControls enablePan enableZoom maxPolarAngle={Math.PI / 2.1} />
+    </Canvas>
   );
 }
 

@@ -79,14 +79,12 @@ public class DesignService {
             saveAiCall(savedProject, requirement, rawAiResponse, true, null);
 
             return new DesignResponse(savedProject.getId(), savedProject.getStatus(), designBrief, ruleResult, layoutPlan, floorplan, null);
-            return new DesignResponse(savedProject.getId(), savedProject.getStatus(), designBrief, ruleResult, layoutPlan, null);
         } catch (Exception exception) {
             savedProject.setStatus("FAILED");
             designRepository.save(savedProject);
             saveAiCall(savedProject, requirement, rawAiResponse, false, exception.getMessage());
 
             return new DesignResponse(savedProject.getId(), savedProject.getStatus(), null, null, null, null, exception.getMessage());
-            return new DesignResponse(savedProject.getId(), savedProject.getStatus(), null, null, null, exception.getMessage());
         }
     }
 
