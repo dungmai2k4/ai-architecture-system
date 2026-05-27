@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 import { Canvas } from "@react-three/fiber";
-import { OrbitControls } from "@react-three/drei";
+import { Bounds, OrbitControls } from "@react-three/drei";
 
 function ResultPanel({ result }) {
   const designBrief = result?.designBrief;
@@ -106,7 +106,11 @@ function FloorplanSection({ floorplan }) {
 
       {activeTab === "svg" && (
         <div className="mt-3 overflow-auto rounded border border-cyan-100 bg-white p-2">
-          <div dangerouslySetInnerHTML={{ __html: floorplan.svg }} />
+          <img
+            src={toSvgDataUrl(floorplan.svg)}
+            alt="Mặt bằng sơ bộ"
+            className="mx-auto h-auto max-h-[70vh] w-full rounded border border-slate-100 bg-slate-50 object-contain"
+          />
         </div>
       )}
 
@@ -139,23 +143,37 @@ function Basic3DPreview({ floorplan }) {
   );
 
   return (
-    <Canvas camera={{ position: [0, 14, 14], fov: 52 }}>
+    <Canvas camera={{ position: [0, 12, 12], fov: 50 }}>
       <ambientLight intensity={0.65} />
       <directionalLight position={[8, 14, 10]} intensity={0.8} />
-      <gridHelper args={[24, 24, "#334155", "#1e293b"]} position={[0, 0, 0]} />
-      {roomMeshes.map((room) => (
-        <mesh key={room.key} position={[room.x, 0.2, room.z]}>
-          <boxGeometry args={[room.width, 0.4, room.depth]} />
-          <meshStandardMaterial color="#22d3ee" opacity={0.7} transparent />
+      <gridHelper
+        args={[Math.max(floorplan.siteWidth, floorplan.siteDepth) + 8, 24, "#334155", "#1e293b"]}
+        position={[0, 0, 0]}
+      />
+      <Bounds fit clip observe margin={1.2}>
+        {roomMeshes.map((room) => (
+          <mesh key={room.key} position={[room.x, 0.2, room.z]}>
+            <boxGeometry args={[room.width, 0.4, room.depth]} />
+            <meshStandardMaterial color="#22d3ee" opacity={0.7} transparent />
+          </mesh>
+        ))}
+        <mesh position={[0, -0.05, 0]} rotation={[-Math.PI / 2, 0, 0]}>
+          <planeGeometry args={[floorplan.siteWidth, floorplan.siteDepth]} />
+          <meshStandardMaterial color="#0f172a" />
         </mesh>
-      ))}
-      <mesh position={[0, -0.05, 0]} rotation={[-Math.PI / 2, 0, 0]}>
-        <planeGeometry args={[floorplan.siteWidth, floorplan.siteDepth]} />
-        <meshStandardMaterial color="#0f172a" />
-      </mesh>
+      </Bounds>
       <OrbitControls enablePan enableZoom maxPolarAngle={Math.PI / 2.1} />
     </Canvas>
   );
+}
+
+function toSvgDataUrl(svg) {
+  if (!svg) return "";
+  const cleaned = svg
+    .replace(/<\?xml[^>]*>/g, "")
+    .replace(/\r?\n|\r/g, "")
+    .trim();
+  return `data:image/svg+xml;charset=utf-8,${encodeURIComponent(cleaned)}`;
 }
 
 function KeyValue({ label, value }) {
