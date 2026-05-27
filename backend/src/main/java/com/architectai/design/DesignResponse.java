@@ -5,6 +5,7 @@ public record DesignResponse(
         String status,
         DesignBrief designBrief,
         RuleResult ruleResult,
+        LayoutPlan layoutPlan,
         String error
 ) {
 }
