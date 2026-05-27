@@ -38,13 +38,13 @@ public class DesignOutput {
     @Column(name = "floorplan_json", columnDefinition = "TEXT")
     private String floorplanJson;
 
-    @Column(name = "svg_path")
+    @Column(name = "svg_path", columnDefinition = "TEXT")
     private String svgPath;
 
     @Column(name = "render_prompt", columnDefinition = "TEXT")
     private String renderPrompt;
 
-    @Column(name = "render_image_path")
+    @Column(name = "render_image_path", columnDefinition = "TEXT")
     private String renderImagePath;
 
     @Column(name = "created_at")
