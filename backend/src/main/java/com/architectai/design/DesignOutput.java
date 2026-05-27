@@ -84,4 +84,12 @@ public class DesignOutput {
     public void setDesignBriefJson(String designBriefJson) {
         this.designBriefJson = designBriefJson;
     }
+
+    public String getRuleResultJson() {
+        return ruleResultJson;
+    }
+
+    public void setRuleResultJson(String ruleResultJson) {
+        this.ruleResultJson = ruleResultJson;
+    }
 }

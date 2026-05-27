@@ -1,5 +1,6 @@
 function ResultPanel({ result }) {
   const designBrief = result?.designBrief;
+  const warnings = result?.ruleResult?.warnings ?? [];
 
   return (
     <section className="mt-6 rounded-md border border-slate-200 bg-white p-4">
@@ -34,6 +35,17 @@ function ResultPanel({ result }) {
             <KeyValue label="Phòng yêu cầu" value={formatList(designBrief.rooms)} />
             <KeyValue label="Tùy chọn" value={formatList(designBrief.preferences)} />
           </dl>
+        </div>
+      )}
+
+      {warnings.length > 0 && (
+        <div className="mt-4 rounded-md border border-amber-200 bg-amber-50 p-4">
+          <h3 className="font-semibold text-amber-800">Cảnh báo quy tắc</h3>
+          <ul className="mt-2 list-disc space-y-1 pl-5 text-sm text-amber-900">
+            {warnings.map((warning) => (
+              <li key={warning}>{warning}</li>
+            ))}
+          </ul>
         </div>
       )}
     </section>
