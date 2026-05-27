@@ -19,6 +19,7 @@ public class DesignService {
     private final DesignOutputRepository designOutputRepository;
     private final AiCallRepository aiCallRepository;
     private final RequirementExtractor requirementExtractor;
+    private final VietnameseRuleEngine vietnameseRuleEngine;
     private final ObjectMapper objectMapper;
     private final String model;
 
@@ -27,6 +28,7 @@ public class DesignService {
             DesignOutputRepository designOutputRepository,
             AiCallRepository aiCallRepository,
             RequirementExtractor requirementExtractor,
+            VietnameseRuleEngine vietnameseRuleEngine,
             ObjectMapper objectMapper,
             @Value("${ollama.model:qwen2.5:7b-instruct}") String model
     ) {
@@ -34,6 +36,7 @@ public class DesignService {
         this.designOutputRepository = designOutputRepository;
         this.aiCallRepository = aiCallRepository;
         this.requirementExtractor = requirementExtractor;
+        this.vietnameseRuleEngine = vietnameseRuleEngine;
         this.objectMapper = objectMapper;
         this.model = model;
     }
@@ -52,23 +55,25 @@ public class DesignService {
             RequirementExtractionResult extractionResult = requirementExtractor.extractWithRawResponse(requirement);
             rawAiResponse = extractionResult.rawResponse();
             DesignBrief designBrief = extractionResult.designBrief();
+            RuleResult ruleResult = vietnameseRuleEngine.evaluate(designBrief);
 
             DesignOutput output = new DesignOutput();
             output.setProject(savedProject);
             output.setDesignBriefJson(objectMapper.writeValueAsString(designBrief));
+            output.setRuleResultJson(objectMapper.writeValueAsString(ruleResult));
             designOutputRepository.save(output);
 
             savedProject.setStatus("COMPLETED");
             designRepository.save(savedProject);
             saveAiCall(savedProject, requirement, rawAiResponse, true, null);
 
-            return new DesignResponse(savedProject.getId(), savedProject.getStatus(), designBrief, null);
+            return new DesignResponse(savedProject.getId(), savedProject.getStatus(), designBrief, ruleResult, null);
         } catch (Exception exception) {
             savedProject.setStatus("FAILED");
             designRepository.save(savedProject);
             saveAiCall(savedProject, requirement, rawAiResponse, false, exception.getMessage());
 
-            return new DesignResponse(savedProject.getId(), savedProject.getStatus(), null, exception.getMessage());
+            return new DesignResponse(savedProject.getId(), savedProject.getStatus(), null, null, exception.getMessage());
         }
     }
 
@@ -79,6 +84,7 @@ public class DesignService {
                         project.getId(),
                         project.getStatus(),
                         loadDesignBrief(project.getId()),
+                        loadRuleResult(project.getId()),
                         null
                 ))
                 .orElse(null);
@@ -92,11 +98,27 @@ public class DesignService {
                 .orElse(null);
     }
 
+    private RuleResult loadRuleResult(Long projectId) {
+        return designOutputRepository.findByProjectId(projectId)
+                .map(DesignOutput::getRuleResultJson)
+                .filter(json -> json != null && !json.isBlank())
+                .map(this::readRuleResult)
+                .orElse(null);
+    }
+
     private DesignBrief readDesignBrief(String json) {
         try {
             return objectMapper.readValue(json, DesignBrief.class);
         } catch (JsonProcessingException exception) {
             throw new IllegalStateException("Stored DesignBrief JSON is invalid", exception);
+        }
+    }
+
+    private RuleResult readRuleResult(String json) {
+        try {
+            return objectMapper.readValue(json, RuleResult.class);
+        } catch (JsonProcessingException exception) {
+            throw new IllegalStateException("Stored rule result JSON is invalid", exception);
         }
     }
 
