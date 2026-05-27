@@ -6,6 +6,7 @@ public record DesignResponse(
         DesignBrief designBrief,
         RuleResult ruleResult,
         LayoutPlan layoutPlan,
+        Floorplan floorplan,
         String error
 ) {
 }
