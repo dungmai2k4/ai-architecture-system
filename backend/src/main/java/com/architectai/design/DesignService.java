@@ -20,6 +20,8 @@ public class DesignService {
     private final AiCallRepository aiCallRepository;
     private final RequirementExtractor requirementExtractor;
     private final VietnameseRuleEngine vietnameseRuleEngine;
+    private final LayoutPlanner layoutPlanner;
+    private final FloorplanGenerator floorplanGenerator;
     private final ObjectMapper objectMapper;
     private final String model;
 
@@ -29,6 +31,8 @@ public class DesignService {
             AiCallRepository aiCallRepository,
             RequirementExtractor requirementExtractor,
             VietnameseRuleEngine vietnameseRuleEngine,
+            LayoutPlanner layoutPlanner,
+            FloorplanGenerator floorplanGenerator,
             ObjectMapper objectMapper,
             @Value("${ollama.model:qwen2.5:7b-instruct}") String model
     ) {
@@ -37,6 +41,8 @@ public class DesignService {
         this.aiCallRepository = aiCallRepository;
         this.requirementExtractor = requirementExtractor;
         this.vietnameseRuleEngine = vietnameseRuleEngine;
+        this.layoutPlanner = layoutPlanner;
+        this.floorplanGenerator = floorplanGenerator;
         this.objectMapper = objectMapper;
         this.model = model;
     }
@@ -56,24 +62,29 @@ public class DesignService {
             rawAiResponse = extractionResult.rawResponse();
             DesignBrief designBrief = extractionResult.designBrief();
             RuleResult ruleResult = vietnameseRuleEngine.evaluate(designBrief);
+            LayoutPlan layoutPlan = layoutPlanner.plan(designBrief);
+            Floorplan floorplan = floorplanGenerator.generate(designBrief);
 
             DesignOutput output = new DesignOutput();
             output.setProject(savedProject);
             output.setDesignBriefJson(objectMapper.writeValueAsString(designBrief));
             output.setRuleResultJson(objectMapper.writeValueAsString(ruleResult));
+            output.setLayoutPlanJson(objectMapper.writeValueAsString(layoutPlan));
+            output.setFloorplanJson(objectMapper.writeValueAsString(floorplan));
+            output.setSvgPath(floorplan.svg());
             designOutputRepository.save(output);
 
             savedProject.setStatus("COMPLETED");
             designRepository.save(savedProject);
             saveAiCall(savedProject, requirement, rawAiResponse, true, null);
 
-            return new DesignResponse(savedProject.getId(), savedProject.getStatus(), designBrief, ruleResult, null);
+            return new DesignResponse(savedProject.getId(), savedProject.getStatus(), designBrief, ruleResult, layoutPlan, floorplan, null);
         } catch (Exception exception) {
             savedProject.setStatus("FAILED");
             designRepository.save(savedProject);
             saveAiCall(savedProject, requirement, rawAiResponse, false, exception.getMessage());
 
-            return new DesignResponse(savedProject.getId(), savedProject.getStatus(), null, null, exception.getMessage());
+            return new DesignResponse(savedProject.getId(), savedProject.getStatus(), null, null, null, null, exception.getMessage());
         }
     }
 
@@ -85,6 +96,8 @@ public class DesignService {
                         project.getStatus(),
                         loadDesignBrief(project.getId()),
                         loadRuleResult(project.getId()),
+                        loadLayoutPlan(project.getId()),
+                        loadFloorplan(project.getId()),
                         null
                 ))
                 .orElse(null);
@@ -119,6 +132,38 @@ public class DesignService {
             return objectMapper.readValue(json, RuleResult.class);
         } catch (JsonProcessingException exception) {
             throw new IllegalStateException("Stored rule result JSON is invalid", exception);
+        }
+    }
+
+    private LayoutPlan loadLayoutPlan(Long projectId) {
+        return designOutputRepository.findByProjectId(projectId)
+                .map(DesignOutput::getLayoutPlanJson)
+                .filter(json -> json != null && !json.isBlank())
+                .map(this::readLayoutPlan)
+                .orElse(null);
+    }
+
+    private LayoutPlan readLayoutPlan(String json) {
+        try {
+            return objectMapper.readValue(json, LayoutPlan.class);
+        } catch (JsonProcessingException exception) {
+            throw new IllegalStateException("Stored layout plan JSON is invalid", exception);
+        }
+    }
+
+    private Floorplan loadFloorplan(Long projectId) {
+        return designOutputRepository.findByProjectId(projectId)
+                .map(DesignOutput::getFloorplanJson)
+                .filter(json -> json != null && !json.isBlank())
+                .map(this::readFloorplan)
+                .orElse(null);
+    }
+
+    private Floorplan readFloorplan(String json) {
+        try {
+            return objectMapper.readValue(json, Floorplan.class);
+        } catch (JsonProcessingException exception) {
+            throw new IllegalStateException("Stored floorplan JSON is invalid", exception);
         }
     }
 

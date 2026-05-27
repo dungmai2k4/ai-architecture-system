@@ -1,6 +1,8 @@
 function ResultPanel({ result }) {
   const designBrief = result?.designBrief;
   const warnings = result?.ruleResult?.warnings ?? [];
+  const layoutPlan = result?.layoutPlan;
+  const floorplan = result?.floorplan;
 
   return (
     <section className="mt-6 rounded-md border border-slate-200 bg-white p-4">
@@ -35,6 +37,32 @@ function ResultPanel({ result }) {
             <KeyValue label="Phòng yêu cầu" value={formatList(designBrief.rooms)} />
             <KeyValue label="Tùy chọn" value={formatList(designBrief.preferences)} />
           </dl>
+        </div>
+      )}
+
+
+      {layoutPlan && (
+        <div className="mt-4 rounded-md border border-emerald-200 bg-emerald-50 p-4">
+          <h3 className="font-semibold text-emerald-800">Gợi ý bố trí sơ bộ</h3>
+          <dl className="mt-2 grid gap-2 text-sm">
+            <KeyValue label="Chiến lược" value={layoutPlan.strategy} />
+            <KeyValue label="Phân khu" value={formatList(layoutPlan.zoning)} />
+            <KeyValue label="Giao thông" value={formatList(layoutPlan.circulation)} />
+            <KeyValue label="Ghi chú" value={formatList(layoutPlan.notes)} />
+          </dl>
+        </div>
+      )}
+
+
+      {floorplan && (
+        <div className="mt-4 rounded-md border border-cyan-200 bg-cyan-50 p-4">
+          <h3 className="font-semibold text-cyan-800">Mặt bằng sơ bộ tầng 1</h3>
+          <p className="mt-1 text-sm text-cyan-900">
+            Kích thước: {floorplan.siteWidth}m x {floorplan.siteDepth}m
+          </p>
+          <div className="mt-3 overflow-auto rounded border border-cyan-100 bg-white p-2">
+            <div dangerouslySetInnerHTML={{ __html: floorplan.svg }} />
+          </div>
         </div>
       )}
 
