@@ -2,9 +2,7 @@
 
 MVP-first AI-powered Vietnamese housing floorplan generator.
 
-The current implementation is the first working slice: a user enters a Vietnamese housing requirement, the backend extracts a structured `DesignBrief` with local Ollama, stores the result in MySQL, and the React frontend displays it.
-
-The floorplan product direction is clear, but deterministic layout generation, SVG rendering, and 3D preview are not implemented yet.
+The current implementation accepts a Vietnamese housing requirement, extracts a structured `DesignBrief` with local Ollama, evaluates deterministic rules, generates a layout/floorplan, stores the result in MySQL, and displays SVG/JSON/3D previews plus a render prompt in the React frontend.
 
 ## MVP Philosophy
 
@@ -142,6 +140,8 @@ Response:
     "preferences": [],
     "constraints": []
   },
+  "renderPrompt": "Architectural visualization prompt: Vietnamese townhouse on a 5m x 20m urban lot...",
+  "renderImagePath": null,
   "error": null
 }
 ```
@@ -280,8 +280,8 @@ Do not add:
 ---
 
 ### Day 7: Polish + optional render
-- Generate render prompt from final design
-- Optional image generation job
+- Generate render prompt from final design (implemented)
+- Optional image generation job (not implemented; `render_image_path` remains optional)
 - Improve loading + error states
 - Test with 3–5 Vietnamese house prompts
 - Fix obvious UX issues only (no refactor)
@@ -304,7 +304,7 @@ Full MVP is done when:
 - Java generates a layout plan.
 - Java generates floorplan geometry.
 - Java renders SVG from geometry.
-- React displays the brief, warnings, SVG, and simple 3D preview.
+- React displays the brief, warnings, SVG, simple 3D preview, and render prompt.
 - AI never generates final coordinates.
 
 ## More Documentation
