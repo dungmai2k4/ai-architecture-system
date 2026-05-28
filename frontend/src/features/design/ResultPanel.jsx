@@ -84,7 +84,7 @@ function FloorplanSection({ floorplan }) {
     <div className="mt-4 rounded-md border border-cyan-200 bg-cyan-50 p-4">
       <h3 className="font-semibold text-cyan-800">Mặt bằng sơ bộ tầng 1</h3>
       <p className="mt-1 text-sm text-cyan-900">
-        Kích thước: {floorplan.siteWidth}m x {floorplan.siteDepth}m
+        Kích thước: {floorplan.siteWidth}m x {floorplan.siteDepth}m · {floorplan.rooms?.length ?? 0} khu vực · {floorplan.doors?.length ?? 0} cửa · {floorplan.windows?.length ?? 0} cửa sổ/thoáng
       </p>
 
       <div className="mt-3 flex gap-2">
@@ -130,41 +130,113 @@ function FloorplanSection({ floorplan }) {
 }
 
 function Basic3DPreview({ floorplan }) {
-  const roomMeshes = useMemo(
-    () =>
-      (floorplan.rooms ?? []).map((room) => ({
-        key: room.name,
-        width: room.width,
-        depth: room.depth,
-        x: room.x + room.width / 2 - floorplan.siteWidth / 2,
-        z: room.y + room.depth / 2 - floorplan.siteDepth / 2,
-      })),
-    [floorplan],
-  );
+  const scene = useMemo(() => buildPreviewScene(floorplan), [floorplan]);
 
   return (
-    <Canvas camera={{ position: [0, 12, 12], fov: 50 }}>
-      <ambientLight intensity={0.65} />
-      <directionalLight position={[8, 14, 10]} intensity={0.8} />
+    <Canvas camera={{ position: [0, 13, 14], fov: 48 }} shadows>
+      <color attach="background" args={["#020617"]} />
+      <ambientLight intensity={0.7} />
+      <directionalLight position={[8, 16, 10]} intensity={1.15} castShadow />
       <gridHelper
-        args={[Math.max(floorplan.siteWidth, floorplan.siteDepth) + 8, 24, "#334155", "#1e293b"]}
+        args={[Math.max(floorplan.siteWidth, floorplan.siteDepth) + 8, 28, "#334155", "#1e293b"]}
         position={[0, 0, 0]}
       />
-      <Bounds fit clip observe margin={1.2}>
-        {roomMeshes.map((room) => (
-          <mesh key={room.key} position={[room.x, 0.2, room.z]}>
-            <boxGeometry args={[room.width, 0.4, room.depth]} />
-            <meshStandardMaterial color="#22d3ee" opacity={0.7} transparent />
-          </mesh>
-        ))}
-        <mesh position={[0, -0.05, 0]} rotation={[-Math.PI / 2, 0, 0]}>
+      <Bounds fit clip observe margin={1.25}>
+        <mesh position={[0, -0.04, 0]} rotation={[-Math.PI / 2, 0, 0]} receiveShadow>
           <planeGeometry args={[floorplan.siteWidth, floorplan.siteDepth]} />
           <meshStandardMaterial color="#0f172a" />
         </mesh>
+
+        {scene.rooms.map((room) => (
+          <mesh key={room.key} position={[room.x, 0.02, room.z]} receiveShadow>
+            <boxGeometry args={[room.width, 0.04, room.depth]} />
+            <meshStandardMaterial color={room.color} opacity={0.92} transparent />
+          </mesh>
+        ))}
+
+        {scene.walls.map((wall) => (
+          <mesh key={wall.key} position={[wall.x, 1.15, wall.z]} castShadow receiveShadow>
+            <boxGeometry args={wall.args} />
+            <meshStandardMaterial color={wall.color} />
+          </mesh>
+        ))}
+
+        {scene.windows.map((window) => (
+          <mesh key={window.key} position={[window.x, 1.35, window.z]}>
+            <boxGeometry args={window.args} />
+            <meshStandardMaterial color="#38bdf8" opacity={0.55} transparent />
+          </mesh>
+        ))}
+
+        {scene.doors.map((door) => (
+          <mesh key={door.key} position={[door.x, 0.8, door.z]}>
+            <boxGeometry args={door.args} />
+            <meshStandardMaterial color="#92400e" />
+          </mesh>
+        ))}
+
+        {scene.furniture.map((item) => (
+          <mesh key={item.key} position={[item.x, 0.18, item.z]} castShadow>
+            <boxGeometry args={[item.width, 0.32, item.depth]} />
+            <meshStandardMaterial color={item.color} />
+          </mesh>
+        ))}
       </Bounds>
-      <OrbitControls enablePan enableZoom maxPolarAngle={Math.PI / 2.1} />
+      <OrbitControls enablePan enableZoom maxPolarAngle={Math.PI / 2.05} />
     </Canvas>
   );
+}
+
+function buildPreviewScene(floorplan) {
+  const roomCenter = (item) => ({
+    x: item.x + item.width / 2 - floorplan.siteWidth / 2,
+    z: item.y + item.depth / 2 - floorplan.siteDepth / 2,
+  });
+
+  const rooms = (floorplan.rooms ?? []).map((room) => ({
+    key: room.name,
+    width: room.width,
+    depth: room.depth,
+    color: room.color ?? "#22d3ee",
+    ...roomCenter(room),
+  }));
+
+  const walls = (floorplan.walls ?? []).map((wall, index) => {
+    const horizontal = Math.abs(wall.x2 - wall.x1) >= Math.abs(wall.y2 - wall.y1);
+    const length = horizontal ? Math.abs(wall.x2 - wall.x1) : Math.abs(wall.y2 - wall.y1);
+    const thickness = Math.max(wall.thickness ?? 0.12, 0.08);
+    return {
+      key: `wall-${index}`,
+      x: (wall.x1 + wall.x2) / 2 - floorplan.siteWidth / 2,
+      z: (wall.y1 + wall.y2) / 2 - floorplan.siteDepth / 2,
+      args: horizontal ? [length, 2.3, thickness] : [thickness, 2.3, length],
+      color: wall.type === "external" ? "#f8fafc" : "#cbd5e1",
+    };
+  });
+
+  const furniture = (floorplan.furniture ?? []).map((item, index) => ({
+    key: `furniture-${index}-${item.type}`,
+    width: item.width,
+    depth: item.depth,
+    color: item.color ?? "#94a3b8",
+    ...roomCenter(item),
+  }));
+
+  const windows = (floorplan.windows ?? []).map((window, index) => toOpeningMesh(window, index, floorplan, 0.08));
+  const doors = (floorplan.doors ?? []).map((door, index) => toOpeningMesh(door, index, floorplan, 0.12));
+
+  return { rooms, walls, windows, doors, furniture };
+}
+
+function toOpeningMesh(opening, index, floorplan, thickness) {
+  const horizontal = opening.orientation !== "vertical";
+  const length = opening.width ?? 0.8;
+  return {
+    key: `${horizontal ? "h" : "v"}-opening-${index}-${opening.label}`,
+    x: (opening.x ?? 0) + (horizontal ? length / 2 : 0) - floorplan.siteWidth / 2,
+    z: (opening.y ?? 0) + (horizontal ? 0 : length / 2) - floorplan.siteDepth / 2,
+    args: horizontal ? [length, 0.95, thickness] : [thickness, 0.95, length],
+  };
 }
 
 function toSvgDataUrl(svg) {
