@@ -1,13 +1,11 @@
 package com.architectai.design;
 
-public record FloorplanRoom(
-        String name,
+public record FloorplanDoor(
         String label,
-        String type,
         double x,
         double y,
         double width,
-        double depth,
-        String color
+        String orientation,
+        String swing
 ) {
 }
