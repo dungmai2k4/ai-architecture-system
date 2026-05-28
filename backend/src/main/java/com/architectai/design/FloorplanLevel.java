@@ -2,7 +2,9 @@ package com.architectai.design;
 
 import java.util.List;
 
-public record Floorplan(
+public record FloorplanLevel(
+        int level,
+        String label,
         double siteWidth,
         double siteDepth,
         List<FloorplanRoom> rooms,
@@ -10,7 +12,6 @@ public record Floorplan(
         List<FloorplanDoor> doors,
         List<FloorplanWindow> windows,
         List<FloorplanFurniture> furniture,
-        String svg,
-        List<FloorplanLevel> floors
+        String svg
 ) {
 }

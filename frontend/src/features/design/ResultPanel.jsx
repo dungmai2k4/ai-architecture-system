@@ -74,18 +74,40 @@ function ResultPanel({ result }) {
 
 function FloorplanSection({ floorplan }) {
   const [activeTab, setActiveTab] = useState("svg");
+  const [activeLevel, setActiveLevel] = useState(1);
   const tabs = [
     { id: "svg", label: "SVG" },
     { id: "json", label: "JSON" },
     { id: "preview3d", label: "3D" },
   ];
+  const floors = floorplan.floors?.length > 0 ? floorplan.floors : [floorplan];
+  const selectedFloor = floors.find((floor) => floor.level === activeLevel) ?? floors[0];
 
   return (
     <div className="mt-4 rounded-md border border-cyan-200 bg-cyan-50 p-4">
-      <h3 className="font-semibold text-cyan-800">Mặt bằng sơ bộ tầng 1</h3>
+      <h3 className="font-semibold text-cyan-800">Mặt bằng sơ bộ {selectedFloor.label ?? `tầng ${selectedFloor.level ?? 1}`}</h3>
       <p className="mt-1 text-sm text-cyan-900">
-        Kích thước: {floorplan.siteWidth}m x {floorplan.siteDepth}m · {floorplan.rooms?.length ?? 0} khu vực · {floorplan.doors?.length ?? 0} cửa · {floorplan.windows?.length ?? 0} cửa sổ/thoáng
+        Kích thước: {selectedFloor.siteWidth}m x {selectedFloor.siteDepth}m · {selectedFloor.rooms?.length ?? 0} khu vực · {selectedFloor.doors?.length ?? 0} cửa · {selectedFloor.windows?.length ?? 0} cửa sổ/thoáng
       </p>
+
+      {floors.length > 1 && (
+        <div className="mt-3 flex flex-wrap gap-2">
+          {floors.map((floor) => (
+            <button
+              key={floor.level}
+              type="button"
+              onClick={() => setActiveLevel(floor.level)}
+              className={`rounded border px-3 py-1 text-sm ${
+                selectedFloor.level === floor.level
+                  ? "border-slate-900 bg-slate-900 text-white"
+                  : "border-cyan-200 bg-white text-slate-700"
+              }`}
+            >
+              {floor.label ?? `Tầng ${floor.level}`}
+            </button>
+          ))}
+        </div>
+      )}
 
       <div className="mt-3 flex gap-2">
         {tabs.map((tab) => (
@@ -107,8 +129,8 @@ function FloorplanSection({ floorplan }) {
       {activeTab === "svg" && (
         <div className="mt-3 overflow-auto rounded border border-cyan-100 bg-white p-2">
           <img
-            src={toSvgDataUrl(floorplan.svg)}
-            alt="Mặt bằng sơ bộ"
+            src={toSvgDataUrl(selectedFloor.svg)}
+            alt={`Mặt bằng sơ bộ ${selectedFloor.label ?? ""}`}
             className="mx-auto h-auto max-h-[70vh] w-full rounded border border-slate-100 bg-slate-50 object-contain"
           />
         </div>
@@ -116,13 +138,13 @@ function FloorplanSection({ floorplan }) {
 
       {activeTab === "json" && (
         <pre className="mt-3 max-h-72 overflow-auto rounded border border-cyan-100 bg-white p-3 text-xs text-slate-700">
-          {JSON.stringify(floorplan, null, 2)}
+          {JSON.stringify(selectedFloor, null, 2)}
         </pre>
       )}
 
       {activeTab === "preview3d" && (
         <div className="mt-3 h-80 overflow-hidden rounded border border-cyan-100 bg-slate-950">
-          <Basic3DPreview floorplan={floorplan} />
+          <Basic3DPreview floorplan={selectedFloor} />
         </div>
       )}
     </div>

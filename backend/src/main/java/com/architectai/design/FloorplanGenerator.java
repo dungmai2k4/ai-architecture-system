@@ -14,8 +14,29 @@ public class FloorplanGenerator {
     public Floorplan generate(DesignBrief brief) {
         double siteWidth = brief.siteWidthMeters();
         double siteDepth = brief.siteDepthMeters();
-        boolean multiFloor = brief.floors() > 1;
+        int floorCount = Math.max(1, brief.floors());
 
+        FloorplanLevel firstFloor = createFirstFloor(siteWidth, siteDepth, floorCount > 1);
+        List<FloorplanLevel> floors = new ArrayList<>();
+        floors.add(firstFloor);
+        for (int level = 2; level <= floorCount; level++) {
+            floors.add(createUpperFloor(siteWidth, siteDepth, level, floorCount, brief.bedrooms(), brief.bathrooms()));
+        }
+
+        return new Floorplan(
+                siteWidth,
+                siteDepth,
+                firstFloor.rooms(),
+                firstFloor.walls(),
+                firstFloor.doors(),
+                firstFloor.windows(),
+                firstFloor.furniture(),
+                firstFloor.svg(),
+                floors
+        );
+    }
+
+    private FloorplanLevel createFirstFloor(double siteWidth, double siteDepth, boolean multiFloor) {
         double frontYardDepth = siteDepth >= 16 ? round(Math.min(2.2, Math.max(1.2, siteDepth * 0.09))) : 0;
         double livingDepth = round(Math.max(3.6, siteDepth * 0.23));
         double serviceDepth = round(Math.max(4.0, siteDepth * 0.24));
@@ -54,7 +75,9 @@ public class FloorplanGenerator {
         List<FloorplanWindow> windows = createWindows(siteWidth, siteDepth, frontYardDepth, livingY, serviceY, rearY, leftWidth, multiFloor);
         List<FloorplanFurniture> furniture = createFurniture(siteWidth, siteDepth, frontYardDepth, livingY, serviceY, rearY, leftWidth, stairWidth, serviceDepth, multiFloor);
 
-        return new Floorplan(
+        return new FloorplanLevel(
+                1,
+                "Tầng 1",
                 siteWidth,
                 siteDepth,
                 rooms,
@@ -62,7 +85,85 @@ public class FloorplanGenerator {
                 doors,
                 windows,
                 furniture,
-                renderSvg(siteWidth, siteDepth, rooms, walls, doors, windows, furniture)
+                renderSvg(siteWidth, siteDepth, rooms, walls, doors, windows, furniture, "Tầng 1")
+        );
+    }
+
+    private FloorplanLevel createUpperFloor(
+            double siteWidth,
+            double siteDepth,
+            int level,
+            int floorCount,
+            int bedrooms,
+            int bathrooms
+    ) {
+        boolean topFloor = level == floorCount && floorCount >= 3;
+        double balconyDepth = round(Math.min(1.5, Math.max(0.9, siteDepth * 0.07)));
+        double frontDepth = round(Math.max(4.2, siteDepth * 0.28));
+        double coreDepth = round(Math.max(4.4, siteDepth * 0.24));
+        double rearDepth = round(siteDepth - balconyDepth - frontDepth - coreDepth);
+        if (rearDepth < 3.4) {
+            rearDepth = 3.4;
+            coreDepth = round(siteDepth - balconyDepth - frontDepth - rearDepth);
+        }
+
+        double stairWidth = round(Math.min(1.8, Math.max(1.15, siteWidth * 0.32)));
+        double leftWidth = round(siteWidth - stairWidth);
+        double frontY = balconyDepth;
+        double coreY = round(frontY + frontDepth);
+        double rearY = round(coreY + coreDepth);
+        double stairDepth = round(coreDepth * 0.58);
+        double wcDepth = round(coreDepth - stairDepth);
+
+        List<FloorplanRoom> rooms = new ArrayList<>();
+        rooms.add(room("balcony_l" + level, topFloor ? "Sân thượng trước" : "Ban công", "outdoor", 0, 0, siteWidth, balconyDepth, "#bbf7d0"));
+        rooms.add(room("front_bedroom_l" + level, topFloor ? "Phòng thờ / đa năng" : "Phòng ngủ trước", topFloor ? "worship" : "bedroom", 0, frontY, siteWidth, frontDepth, topFloor ? "#f5d0fe" : "#ede9fe"));
+        rooms.add(room("family_l" + level, "Sinh hoạt chung", "living", 0, coreY, leftWidth, coreDepth, "#cffafe"));
+        rooms.add(room("stairs_l" + level, "Thang", "stairs", leftWidth, coreY, stairWidth, stairDepth, "#e0f2fe"));
+        rooms.add(room("wc_l" + level, bathrooms >= level ? "WC tầng " + level : "Kho/WC", "bathroom", leftWidth, round(coreY + stairDepth), stairWidth, wcDepth, "#dbeafe"));
+        rooms.add(room("lightwell_l" + level, "Thông tầng", "void", round(leftWidth * 0.58), round(coreY + 0.3), round(leftWidth * 0.34), round(Math.max(1.4, coreDepth * 0.35)), "#ccfbf1"));
+        rooms.add(room("rear_bedroom_l" + level, topFloor ? "Sân phơi sau" : "Phòng ngủ sau", topFloor ? "service" : "bedroom", 0, rearY, siteWidth, rearDepth, topFloor ? "#e2e8f0" : "#ddd6fe"));
+
+        List<FloorplanWall> walls = createWalls(siteWidth, siteDepth, rooms);
+        List<FloorplanDoor> doors = new ArrayList<>();
+        doors.add(new FloorplanDoor("Cửa phòng trước", round(siteWidth / 2 - 0.45), frontY, 0.9, "horizontal", "in"));
+        doors.add(new FloorplanDoor("Cửa sinh hoạt", round(leftWidth / 2 - 0.45), coreY, 0.9, "horizontal", "in"));
+        doors.add(new FloorplanDoor("Cửa WC", leftWidth, round(coreY + coreDepth * 0.72), 0.75, "vertical", "in"));
+        doors.add(new FloorplanDoor(topFloor ? "Cửa sân phơi" : "Cửa phòng sau", round(siteWidth / 2 - 0.45), rearY, 0.9, "horizontal", "in"));
+        doors.add(new FloorplanDoor("Lối thang", leftWidth, round(coreY + 0.35), Math.min(0.85, stairWidth * 0.65), "vertical", "in"));
+
+        List<FloorplanWindow> windows = new ArrayList<>();
+        windows.add(new FloorplanWindow("Cửa ra ban công", round(siteWidth / 2 - 0.8), balconyDepth, 1.6, "horizontal"));
+        windows.add(new FloorplanWindow("Thoáng phòng trước", round(siteWidth * 0.15), balconyDepth, round(siteWidth * 0.28), "horizontal"));
+        windows.add(new FloorplanWindow("Thông tầng", round(leftWidth * 0.6), round(coreY + 0.3), round(leftWidth * 0.28), "horizontal"));
+        windows.add(new FloorplanWindow(topFloor ? "Thoáng sân phơi" : "Cửa sổ phòng sau", round(siteWidth / 2 - 0.9), siteDepth, 1.8, "horizontal"));
+        windows.add(new FloorplanWindow("Thoáng WC", siteWidth, round(coreY + 2.9), 0.8, "vertical"));
+
+        List<FloorplanFurniture> furniture = new ArrayList<>();
+        furniture.add(new FloorplanFurniture(topFloor ? "Bàn thờ" : "Giường trước", topFloor ? "altar" : "bed", round(siteWidth / 2 - 1.05), round(frontY + 0.8), 2.1, topFloor ? 0.75 : 1.8, 0, topFloor ? "#a855f7" : "#c4b5fd"));
+        furniture.add(new FloorplanFurniture("Sofa nhỏ", "sofa", 0.45, round(coreY + 0.85), round(Math.min(2.0, leftWidth * 0.58)), 0.75, 0, "#94a3b8"));
+        furniture.add(new FloorplanFurniture("Bậc thang", "stairs", round(leftWidth + 0.18), round(coreY + 0.35), round(stairWidth - 0.36), 2.1, 0, "#38bdf8"));
+        furniture.add(new FloorplanFurniture("Lavabo", "sink", round(leftWidth + stairWidth * 0.25), round(coreY + coreDepth - 1.05), 0.5, 0.5, 0, "#60a5fa"));
+        if (topFloor) {
+            furniture.add(new FloorplanFurniture("Máy giặt", "washer", 0.45, round(siteDepth - 1.1), 0.7, 0.7, 0, "#64748b"));
+            furniture.add(new FloorplanFurniture("Bồn cây", "planter", round(siteWidth - 1.25), round(siteDepth - 1.15), 0.85, 0.65, 0, "#22c55e"));
+        } else {
+            furniture.add(new FloorplanFurniture("Giường sau", "bed", round(siteWidth / 2 - 1.05), round(rearY + 0.65), 2.1, 1.8, 0, "#c4b5fd"));
+            furniture.add(new FloorplanFurniture("Tủ áo", "wardrobe", 0.35, round(siteDepth - 0.85), round(Math.min(2.2, siteWidth - 0.7)), 0.5, 0, "#8b5cf6"));
+        }
+
+        String label = "Tầng " + level;
+        return new FloorplanLevel(
+                level,
+                label,
+                siteWidth,
+                siteDepth,
+                rooms,
+                walls,
+                doors,
+                windows,
+                furniture,
+                renderSvg(siteWidth, siteDepth, rooms, walls, doors, windows, furniture, label)
         );
     }
 
@@ -163,7 +264,8 @@ public class FloorplanGenerator {
             List<FloorplanWall> walls,
             List<FloorplanDoor> doors,
             List<FloorplanWindow> windows,
-            List<FloorplanFurniture> furniture
+            List<FloorplanFurniture> furniture,
+            String floorLabel
     ) {
         int width = toPixels(siteWidth) + MARGIN * 2;
         int height = toPixels(siteDepth) + MARGIN * 2;
@@ -175,6 +277,7 @@ public class FloorplanGenerator {
                 .append("<pattern id='grid' width='34' height='34' patternUnits='userSpaceOnUse'><path d='M 34 0 L 0 0 0 34' fill='none' stroke='#e2e8f0' stroke-width='0.7'/></pattern>")
                 .append("</defs>");
         svg.append("<rect width='100%' height='100%' fill='#f8fafc'/>");
+        svg.append("<text x='48' y='28' font-family='Arial, sans-serif' font-size='16' font-weight='700' fill='#0f172a'>").append(escape(floorLabel)).append("</text>");
         svg.append("<rect x='").append(MARGIN).append("' y='").append(MARGIN).append("' width='").append(toPixels(siteWidth)).append("' height='").append(toPixels(siteDepth)).append("' fill='url(#grid)'/>");
 
         for (FloorplanRoom room : rooms) {
