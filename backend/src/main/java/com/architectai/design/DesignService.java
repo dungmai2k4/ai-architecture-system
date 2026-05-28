@@ -22,6 +22,7 @@ public class DesignService {
     private final VietnameseRuleEngine vietnameseRuleEngine;
     private final LayoutPlanner layoutPlanner;
     private final FloorplanGenerator floorplanGenerator;
+    private final RenderPromptGenerator renderPromptGenerator;
     private final ObjectMapper objectMapper;
     private final String model;
 
@@ -33,6 +34,7 @@ public class DesignService {
             VietnameseRuleEngine vietnameseRuleEngine,
             LayoutPlanner layoutPlanner,
             FloorplanGenerator floorplanGenerator,
+            RenderPromptGenerator renderPromptGenerator,
             ObjectMapper objectMapper,
             @Value("${ollama.model:qwen2.5:7b-instruct}") String model
     ) {
@@ -43,6 +45,7 @@ public class DesignService {
         this.vietnameseRuleEngine = vietnameseRuleEngine;
         this.layoutPlanner = layoutPlanner;
         this.floorplanGenerator = floorplanGenerator;
+        this.renderPromptGenerator = renderPromptGenerator;
         this.objectMapper = objectMapper;
         this.model = model;
     }
@@ -64,6 +67,7 @@ public class DesignService {
             RuleResult ruleResult = vietnameseRuleEngine.evaluate(designBrief);
             LayoutPlan layoutPlan = layoutPlanner.plan(designBrief);
             Floorplan floorplan = floorplanGenerator.generate(designBrief);
+            String renderPrompt = renderPromptGenerator.generate(designBrief, layoutPlan, floorplan);
 
             DesignOutput output = new DesignOutput();
             output.setProject(savedProject);
@@ -72,19 +76,20 @@ public class DesignService {
             output.setLayoutPlanJson(objectMapper.writeValueAsString(layoutPlan));
             output.setFloorplanJson(objectMapper.writeValueAsString(floorplan));
             output.setSvgPath(floorplan.svg());
+            output.setRenderPrompt(renderPrompt);
             designOutputRepository.save(output);
 
             savedProject.setStatus("COMPLETED");
             designRepository.save(savedProject);
             saveAiCall(savedProject, requirement, rawAiResponse, true, null);
 
-            return new DesignResponse(savedProject.getId(), savedProject.getStatus(), designBrief, ruleResult, layoutPlan, floorplan, null);
+            return new DesignResponse(savedProject.getId(), savedProject.getStatus(), designBrief, ruleResult, layoutPlan, floorplan, renderPrompt, null, null);
         } catch (Exception exception) {
             savedProject.setStatus("FAILED");
             designRepository.save(savedProject);
             saveAiCall(savedProject, requirement, rawAiResponse, false, exception.getMessage());
 
-            return new DesignResponse(savedProject.getId(), savedProject.getStatus(), null, null, null, null, exception.getMessage());
+            return new DesignResponse(savedProject.getId(), savedProject.getStatus(), null, null, null, null, null, null, exception.getMessage());
         }
     }
 
@@ -98,6 +103,8 @@ public class DesignService {
                         loadRuleResult(project.getId()),
                         loadLayoutPlan(project.getId()),
                         loadFloorplan(project.getId()),
+                        loadRenderPrompt(project.getId()),
+                        loadRenderImagePath(project.getId()),
                         null
                 ))
                 .orElse(null);
@@ -149,6 +156,20 @@ public class DesignService {
         } catch (JsonProcessingException exception) {
             throw new IllegalStateException("Stored layout plan JSON is invalid", exception);
         }
+    }
+
+    private String loadRenderPrompt(Long projectId) {
+        return designOutputRepository.findByProjectId(projectId)
+                .map(DesignOutput::getRenderPrompt)
+                .filter(prompt -> prompt != null && !prompt.isBlank())
+                .orElse(null);
+    }
+
+    private String loadRenderImagePath(Long projectId) {
+        return designOutputRepository.findByProjectId(projectId)
+                .map(DesignOutput::getRenderImagePath)
+                .filter(path -> path != null && !path.isBlank())
+                .orElse(null);
     }
 
     private Floorplan loadFloorplan(Long projectId) {

@@ -4,7 +4,7 @@ React + Vite frontend for the ArchitectAI MVP.
 
 The current frontend implements one screen: a requirement form that calls the backend and displays the extracted `DesignBrief`.
 
-SVG rendering, Three.js preview, routing, polling, and canvas rendering are not implemented yet.
+The screen now displays extracted briefs, rule warnings, layout data, SVG floorplans, a simple Three.js preview, and a render prompt. Routing, polling, and canvas rendering are not implemented yet.
 
 ## React Architecture
 
@@ -150,6 +150,7 @@ Displayed result fields:
 - Style
 - Requested rooms
 - Preferences
+- Render prompt for optional image generation
 
 Note: some Vietnamese strings in current source files appear mojibake-encoded. This is a text encoding cleanup task.
 

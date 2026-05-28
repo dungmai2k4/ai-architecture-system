@@ -2,7 +2,7 @@
 
 Spring Boot backend for the ArchitectAI MVP.
 
-The current backend implements requirement intake, local AI extraction, validation, persistence, and API responses. It does not yet generate layouts, geometry, SVG, 3D data, or async render jobs.
+The current backend implements requirement intake, local AI extraction, validation, persistence, and API responses. It now generates deterministic layout/floorplan data and a render prompt, but it still does not run async render jobs or create render images.
 
 ## Backend Architecture
 
@@ -294,14 +294,14 @@ updated_at          datetime
 Used now:
 
 - `design_brief_json`
-
-Scaffolded for later MVP steps:
-
 - `rule_result_json`
 - `layout_plan_json`
 - `floorplan_json`
 - `svg_path`
 - `render_prompt`
+
+Scaffolded for later MVP steps:
+
 - `render_image_path`
 
 ### `ai_calls`

@@ -7,6 +7,7 @@ function ResultPanel({ result }) {
   const warnings = result?.ruleResult?.warnings ?? [];
   const layoutPlan = result?.layoutPlan;
   const floorplan = result?.floorplan;
+  const renderPrompt = result?.renderPrompt;
 
   return (
     <section className="mt-6 rounded-md border border-slate-200 bg-white p-4">
@@ -58,6 +59,8 @@ function ResultPanel({ result }) {
 
       {floorplan && <FloorplanSection floorplan={floorplan} />}
 
+      {renderPrompt && <RenderPromptSection prompt={renderPrompt} imagePath={result.renderImagePath} />}
+
       {warnings.length > 0 && (
         <div className="mt-4 rounded-md border border-amber-200 bg-amber-50 p-4">
           <h3 className="font-semibold text-amber-800">Cảnh báo quy tắc</h3>
@@ -69,6 +72,24 @@ function ResultPanel({ result }) {
         </div>
       )}
     </section>
+  );
+}
+
+
+function RenderPromptSection({ prompt, imagePath }) {
+  return (
+    <div className="mt-4 rounded-md border border-violet-200 bg-violet-50 p-4">
+      <h3 className="font-semibold text-violet-800">Prompt render gợi ý</h3>
+      <p className="mt-1 text-sm text-violet-900">
+        Dùng prompt này cho bước tạo ảnh phối cảnh/mood board sau khi đã duyệt mặt bằng.
+      </p>
+      <pre className="mt-3 whitespace-pre-wrap rounded border border-violet-100 bg-white p-3 text-xs leading-5 text-slate-700">
+        {prompt}
+      </pre>
+      {imagePath && (
+        <p className="mt-2 text-sm text-violet-900">Ảnh render: {imagePath}</p>
+      )}
+    </div>
   );
 }
 

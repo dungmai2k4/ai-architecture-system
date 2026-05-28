@@ -7,6 +7,8 @@ public record DesignResponse(
         RuleResult ruleResult,
         LayoutPlan layoutPlan,
         Floorplan floorplan,
+        String renderPrompt,
+        String renderImagePath,
         String error
 ) {
 }
