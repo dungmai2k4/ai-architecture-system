@@ -26,25 +26,25 @@ public class DesignOutput {
     @JoinColumn(name = "project_id", nullable = false)
     private DesignProject project;
 
-    @Column(name = "design_brief_json", columnDefinition = "TEXT")
+    @Column(name = "design_brief_json", columnDefinition = "LONGTEXT")
     private String designBriefJson;
 
-    @Column(name = "rule_result_json", columnDefinition = "TEXT")
+    @Column(name = "rule_result_json", columnDefinition = "LONGTEXT")
     private String ruleResultJson;
 
-    @Column(name = "layout_plan_json", columnDefinition = "TEXT")
+    @Column(name = "layout_plan_json", columnDefinition = "LONGTEXT")
     private String layoutPlanJson;
 
-    @Column(name = "floorplan_json", columnDefinition = "TEXT")
+    @Column(name = "floorplan_json", columnDefinition = "LONGTEXT")
     private String floorplanJson;
 
-    @Column(name = "svg_path", columnDefinition = "TEXT")
+    @Column(name = "svg_path", columnDefinition = "LONGTEXT")
     private String svgPath;
 
-    @Column(name = "render_prompt", columnDefinition = "TEXT")
+    @Column(name = "render_prompt", columnDefinition = "LONGTEXT")
     private String renderPrompt;
 
-    @Column(name = "render_image_path", columnDefinition = "TEXT")
+    @Column(name = "render_image_path", columnDefinition = "LONGTEXT")
     private String renderImagePath;
 
     @Column(name = "created_at")
