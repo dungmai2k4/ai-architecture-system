@@ -435,21 +435,40 @@ public class FloorplanGenerator {
             List<FloorplanFurniture> furniture,
             String floorLabel
     ) {
-        int width = toPixels(siteWidth) + MARGIN * 2;
-        int height = toPixels(siteDepth) + MARGIN * 2;
+        int planWidth = toPixels(siteWidth);
+        int planHeight = toPixels(siteDepth);
+        int width = planWidth + MARGIN * 2;
+        int height = planHeight + MARGIN * 2;
+        int titleY = 20;
 
         StringBuilder svg = new StringBuilder();
         svg.append("<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 ").append(width).append(' ').append(height).append("'>");
         svg.append("<defs>")
-                .append("<filter id='softShadow' x='-10%' y='-10%' width='120%' height='120%'><feDropShadow dx='0' dy='2' stdDeviation='2' flood-color='#0f172a' flood-opacity='0.16'/></filter>")
-                .append("<pattern id='grid' width='34' height='34' patternUnits='userSpaceOnUse'><path d='M 34 0 L 0 0 0 34' fill='none' stroke='#e2e8f0' stroke-width='0.7'/></pattern>")
+                .append("<filter id='softShadow' x='-15%' y='-15%' width='130%' height='130%'><feDropShadow dx='0' dy='2' stdDeviation='2.2' flood-color='#0f172a' flood-opacity='0.14'/></filter>")
+                .append("<pattern id='paperGrid' width='34' height='34' patternUnits='userSpaceOnUse'><path d='M 34 0 L 0 0 0 34' fill='none' stroke='#d8d3c4' stroke-width='0.65'/></pattern>")
+                .append("<pattern id='gardenDots' width='18' height='18' patternUnits='userSpaceOnUse'><circle cx='5' cy='5' r='2.2' fill='#65a30d' opacity='0.45'/><path d='M12 14q4-7-2-10q-4 5 2 10z' fill='#15803d' opacity='0.38'/></pattern>")
+                .append("<pattern id='wetTile' width='12' height='12' patternUnits='userSpaceOnUse'><path d='M0 0h12v12H0z' fill='#dbeafe'/><path d='M0 12L12 0M-3 3L3 -3M9 15l6-6' stroke='#93c5fd' stroke-width='0.55' opacity='0.65'/></pattern>")
+                .append("<pattern id='voidHatch' width='10' height='10' patternUnits='userSpaceOnUse'><path d='M0 10L10 0' stroke='#2dd4bf' stroke-width='1' opacity='0.45'/></pattern>")
+                .append("<style>")
+                .append(".room-label{font-family:Arial,sans-serif;font-size:11px;font-weight:700;fill:#1f2937}.room-meta{font-family:Arial,sans-serif;font-size:9px;fill:#64748b}.dim-text{font-family:Arial,sans-serif;font-size:9px;fill:#374151}.thin{vector-effect:non-scaling-stroke}")
+                .append("</style>")
                 .append("</defs>");
-        svg.append("<rect width='100%' height='100%' fill='#f8fafc'/>");
-        svg.append("<text x='48' y='28' font-family='Arial, sans-serif' font-size='16' font-weight='700' fill='#0f172a'>").append(escape(floorLabel)).append("</text>");
-        svg.append("<rect x='").append(MARGIN).append("' y='").append(MARGIN).append("' width='").append(toPixels(siteWidth)).append("' height='").append(toPixels(siteDepth)).append("' fill='url(#grid)'/>");
+        svg.append("<rect width='100%' height='100%' fill='#efe9dc'/>");
+        svg.append("<rect x='10' y='8' width='").append(width - 20).append("' height='").append(height - 16).append("' fill='none' stroke='#57534e' stroke-width='1'/>");
+        svg.append("<text x='").append(width / 2).append("' y='").append(titleY).append("' text-anchor='middle' font-family='Arial, sans-serif' font-size='15' font-weight='800' fill='#111827'>")
+                .append(escape("Mặt bằng nhà phố Việt Nam hiện đại & nhiệt đới - " + floorLabel)).append("</text>");
+        svg.append("<text x='").append(width / 2).append("' y='").append(titleY + 14).append("' text-anchor='middle' font-family='Arial, sans-serif' font-size='9' font-style='italic' fill='#57534e'>")
+                .append(escape("Vietnamese tropical townhouse floor plan · kích thước theo mét")).append("</text>");
+        svg.append("<rect x='").append(MARGIN - 8).append("' y='").append(MARGIN - 8).append("' width='").append(planWidth + 16).append("' height='").append(planHeight + 16)
+                .append("' rx='2' fill='#faf7ef' stroke='#a8a29e' stroke-width='1.1' filter='url(#softShadow)'/>");
+        svg.append("<rect x='").append(MARGIN).append("' y='").append(MARGIN).append("' width='").append(planWidth).append("' height='").append(planHeight).append("' fill='url(#paperGrid)' stroke='#78716c' stroke-width='0.8'/>");
 
+        appendDimensionChains(svg, rooms, siteWidth, siteDepth);
         for (FloorplanRoom room : rooms) {
             appendRoom(svg, room);
+        }
+        for (FloorplanRoom room : rooms) {
+            appendRoomDecoration(svg, room);
         }
         for (FloorplanFurniture item : furniture) {
             appendFurniture(svg, item);
@@ -464,8 +483,8 @@ public class FloorplanGenerator {
             appendDoor(svg, door);
         }
         appendDimensions(svg, siteWidth, siteDepth);
-        appendNorthArrow(svg, width);
-        appendLegend(svg, height);
+        appendNorthArrow(svg, width, height);
+        appendLegend(svg, width, height);
 
         svg.append("</svg>");
         return svg.toString();
@@ -476,12 +495,81 @@ public class FloorplanGenerator {
         int y = px(room.y());
         int w = toPixels(room.width());
         int d = toPixels(room.depth());
+        String fill = switch (room.type()) {
+            case "outdoor" -> "url(#gardenDots)";
+            case "bathroom" -> "url(#wetTile)";
+            case "void" -> "url(#voidHatch)";
+            default -> room.color();
+        };
+        String baseFill = "outdoor".equals(room.type()) ? "#dcfce7" : room.color();
         svg.append("<rect x='").append(x).append("' y='").append(y).append("' width='").append(w).append("' height='").append(d)
-                .append("' rx='4' fill='").append(room.color()).append("' stroke='#94a3b8' stroke-width='1' filter='url(#softShadow)'/>");
-        svg.append("<text x='").append(x + 8).append("' y='").append(y + 18).append("' font-family='Arial, sans-serif' font-size='12' font-weight='700' fill='#0f172a'>")
+                .append("' fill='").append(baseFill).append("' stroke='#a8a29e' stroke-width='0.8'/>");
+        svg.append("<rect x='").append(x + 2).append("' y='").append(y + 2).append("' width='").append(Math.max(0, w - 4)).append("' height='").append(Math.max(0, d - 4))
+                .append("' fill='").append(fill).append("' fill-opacity='0.72' stroke='none'/>");
+        svg.append("<text class='room-label' x='").append(x + 7).append("' y='").append(y + 16).append("'>")
                 .append(escape(room.label())).append("</text>");
-        svg.append("<text x='").append(x + 8).append("' y='").append(y + 34).append("' font-family='Arial, sans-serif' font-size='10' fill='#475569'>")
-                .append(formatArea(room.width() * room.depth())).append(" m²</text>");
+        svg.append("<text class='room-meta' x='").append(x + 7).append("' y='").append(y + 30).append("'>")
+                .append(formatArea(room.width() * room.depth())).append(" m² · ").append(formatNumber(room.width())).append("×").append(formatNumber(room.depth())).append("m</text>");
+    }
+
+    private void appendRoomDecoration(StringBuilder svg, FloorplanRoom room) {
+        int x = px(room.x());
+        int y = px(room.y());
+        int w = toPixels(room.width());
+        int d = toPixels(room.depth());
+        if (w < 36 || d < 32) {
+            return;
+        }
+        switch (room.type()) {
+            case "outdoor", "void" -> appendPlantCluster(svg, x + w / 2, y + d / 2, Math.min(w, d));
+            case "stairs" -> appendStairTreads(svg, x + 8, y + 8, w - 16, d - 16);
+            case "bathroom" -> appendBathroomFixtures(svg, x, y, w, d);
+            case "kitchen" -> appendCounterLine(svg, x, y, w, d);
+            default -> {
+                if (w > 100 && d > 70) {
+                    svg.append("<path d='M ").append(x + 10).append(' ').append(y + d - 16).append(" H ").append(x + w - 10)
+                            .append("' stroke='#c4b5a5' stroke-width='1' stroke-dasharray='4 5' fill='none' opacity='0.8'/>");
+                }
+            }
+        }
+    }
+
+    private void appendPlantCluster(StringBuilder svg, int cx, int cy, int size) {
+        int radius = Math.max(5, Math.min(13, size / 7));
+        svg.append("<g fill='none' stroke='#166534' stroke-width='1' opacity='0.78'>");
+        for (int i = -1; i <= 1; i++) {
+            int ox = i * radius;
+            svg.append("<circle cx='").append(cx + ox).append("' cy='").append(cy + (i % 2) * radius / 2).append("' r='").append(radius).append("' fill='#86efac' stroke='#15803d'/>");
+            svg.append("<path d='M ").append(cx + ox).append(' ').append(cy + radius).append(" C ").append(cx + ox - radius).append(' ').append(cy)
+                    .append(' ').append(cx + ox + radius).append(' ').append(cy).append(' ').append(cx + ox).append(' ').append(cy - radius).append("'/>");
+        }
+        svg.append("</g>");
+    }
+
+    private void appendStairTreads(StringBuilder svg, int x, int y, int w, int d) {
+        int steps = Math.max(4, Math.min(9, d / 12));
+        svg.append("<g stroke='#0369a1' stroke-width='1' fill='none' opacity='0.9'>");
+        for (int i = 0; i <= steps; i++) {
+            int yy = y + (int) Math.round(i * (d / (double) steps));
+            svg.append("<line x1='").append(x).append("' y1='").append(yy).append("' x2='").append(x + w).append("' y2='").append(yy).append("'/>");
+        }
+        svg.append("<path d='M ").append(x + 5).append(' ').append(y + d - 7).append(" L ").append(x + w - 5).append(' ').append(y + 7)
+                .append("' stroke-dasharray='3 3'/></g>");
+    }
+
+    private void appendBathroomFixtures(StringBuilder svg, int x, int y, int w, int d) {
+        svg.append("<g fill='#f8fafc' stroke='#2563eb' stroke-width='0.9' opacity='0.9'>");
+        svg.append("<rect x='").append(x + w - 28).append("' y='").append(y + 10).append("' width='18' height='16' rx='4'/>");
+        svg.append("<circle cx='").append(x + 18).append("' cy='").append(y + d - 18).append("' r='9'/>");
+        svg.append("<rect x='").append(x + 8).append("' y='").append(y + 8).append("' width='20' height='10' rx='2'/>");
+        svg.append("</g>");
+    }
+
+    private void appendCounterLine(StringBuilder svg, int x, int y, int w, int d) {
+        svg.append("<g stroke='#b45309' stroke-width='3' fill='none' opacity='0.55'>");
+        svg.append("<path d='M ").append(x + 8).append(' ').append(y + 10).append(" H ").append(x + w - 8).append("'/>");
+        svg.append("<path d='M ").append(x + 10).append(' ').append(y + 10).append(" V ").append(y + Math.min(d - 8, 50)).append("'/>");
+        svg.append("</g>");
     }
 
     private void appendFurniture(StringBuilder svg, FloorplanFurniture item) {
@@ -489,18 +577,32 @@ public class FloorplanGenerator {
         int y = px(item.y());
         int w = toPixels(item.width());
         int d = toPixels(item.depth());
+        svg.append("<g>");
         svg.append("<rect x='").append(x).append("' y='").append(y).append("' width='").append(w).append("' height='").append(d)
-                .append("' rx='5' fill='").append(item.color()).append("' fill-opacity='0.78' stroke='#334155' stroke-width='0.8'/>");
+                .append("' rx='4' fill='").append(item.color()).append("' fill-opacity='0.82' stroke='#44403c' stroke-width='0.8'/>");
+        if ("dining".equals(item.type())) {
+            int chairs = Math.max(2, Math.min(6, w / 18));
+            for (int i = 0; i < chairs; i++) {
+                int cx = x + 8 + i * Math.max(12, (w - 16) / chairs);
+                svg.append("<circle cx='").append(cx).append("' cy='").append(y - 5).append("' r='3.5' fill='#a16207' opacity='0.72'/>");
+                svg.append("<circle cx='").append(cx).append("' cy='").append(y + d + 5).append("' r='3.5' fill='#a16207' opacity='0.72'/>");
+            }
+        } else if ("bed".equals(item.type())) {
+            svg.append("<rect x='").append(x + 4).append("' y='").append(y + 4).append("' width='").append(Math.max(8, w / 3)).append("' height='").append(Math.max(8, d - 8)).append("' rx='2' fill='#faf5ff' opacity='0.8'/>");
+        } else if ("sofa".equals(item.type())) {
+            svg.append("<path d='M ").append(x + 5).append(' ').append(y + d - 5).append(" H ").append(x + w - 5).append("' stroke='#475569' stroke-width='3' stroke-linecap='round'/>");
+        }
         if (w > 30 && d > 18) {
-            svg.append("<text x='").append(x + 5).append("' y='").append(y + Math.min(16, d - 4)).append("' font-family='Arial, sans-serif' font-size='9' fill='#0f172a'>")
+            svg.append("<text x='").append(x + 5).append("' y='").append(y + Math.min(15, d - 4)).append("' font-family='Arial, sans-serif' font-size='8.5' font-weight='700' fill='#1f2937'>")
                     .append(escape(item.label())).append("</text>");
         }
+        svg.append("</g>");
     }
 
     private void appendWall(StringBuilder svg, FloorplanWall wall) {
         double thickness = Math.max(2.2, wall.thickness() * SCALE);
         svg.append("<line x1='").append(px(wall.x1())).append("' y1='").append(px(wall.y1())).append("' x2='").append(px(wall.x2())).append("' y2='").append(px(wall.y2()))
-                .append("' stroke='").append("external".equals(wall.type()) ? "#0f172a" : "#334155")
+                .append("' stroke='").append("external".equals(wall.type()) ? "#111827" : "#292524")
                 .append("' stroke-width='").append(formatNumber(thickness)).append("' stroke-linecap='square'/>");
     }
 
@@ -508,7 +610,7 @@ public class FloorplanGenerator {
         int x = px(door.x());
         int y = px(door.y());
         int w = toPixels(door.width());
-        svg.append("<g stroke='#92400e' stroke-width='2' fill='none'>");
+        svg.append("<g stroke='#b45309' stroke-width='1.7' fill='none'>");
         if ("vertical".equals(door.orientation())) {
             svg.append("<line x1='").append(x).append("' y1='").append(y).append("' x2='").append(x).append("' y2='").append(y + w).append("'/>");
             svg.append("<path d='M ").append(x).append(' ').append(y).append(" Q ").append(x - w).append(' ').append(y + w / 2).append(' ').append(x).append(' ').append(y + w).append("'/>");
@@ -516,7 +618,8 @@ public class FloorplanGenerator {
             svg.append("<line x1='").append(x).append("' y1='").append(y).append("' x2='").append(x + w).append("' y2='").append(y).append("'/>");
             svg.append("<path d='M ").append(x).append(' ').append(y).append(" Q ").append(x + w / 2).append(' ').append(y + w).append(' ').append(x + w).append(' ').append(y).append("'/>");
         }
-        svg.append("</g>");
+        svg.append("<text x='").append(x + 3).append("' y='").append(y - 3).append("' font-family='Arial, sans-serif' font-size='7' fill='#92400e'>")
+                .append(escape(door.label())).append("</text></g>");
     }
 
     private void appendWindow(StringBuilder svg, FloorplanWindow window) {
@@ -539,25 +642,84 @@ public class FloorplanGenerator {
         int y1 = MARGIN;
         int x2 = MARGIN + toPixels(siteWidth);
         int y2 = MARGIN + toPixels(siteDepth);
-        svg.append("<g stroke='#475569' stroke-width='1' fill='#475569' font-family='Arial, sans-serif' font-size='11'>");
-        svg.append("<line x1='").append(x1).append("' y1='").append(y1 - 18).append("' x2='").append(x2).append("' y2='").append(y1 - 18).append("'/>");
-        svg.append("<text x='").append((x1 + x2) / 2 - 18).append("' y='").append(y1 - 24).append("'>").append(formatNumber(siteWidth)).append("m</text>");
-        svg.append("<line x1='").append(x2 + 18).append("' y1='").append(y1).append("' x2='").append(x2 + 18).append("' y2='").append(y2).append("'/>");
-        svg.append("<text x='").append(x2 + 23).append("' y='").append((y1 + y2) / 2).append("'>").append(formatNumber(siteDepth)).append("m</text>");
+        svg.append("<g stroke='#57534e' stroke-width='0.9' fill='#374151' font-family='Arial, sans-serif' font-size='10'>");
+        svg.append("<line x1='").append(x1).append("' y1='").append(y1 - 24).append("' x2='").append(x2).append("' y2='").append(y1 - 24).append("'/>");
+        svg.append("<line x1='").append(x1).append("' y1='").append(y1 - 30).append("' x2='").append(x1).append("' y2='").append(y1 - 14).append("'/>");
+        svg.append("<line x1='").append(x2).append("' y1='").append(y1 - 30).append("' x2='").append(x2).append("' y2='").append(y1 - 14).append("'/>");
+        svg.append("<text x='").append((x1 + x2) / 2).append("' y='").append(y1 - 29).append("' text-anchor='middle'>").append(formatNumber(siteWidth)).append("m</text>");
+        svg.append("<line x1='").append(x2 + 24).append("' y1='").append(y1).append("' x2='").append(x2 + 24).append("' y2='").append(y2).append("'/>");
+        svg.append("<line x1='").append(x2 + 16).append("' y1='").append(y1).append("' x2='").append(x2 + 30).append("' y2='").append(y1).append("'/>");
+        svg.append("<line x1='").append(x2 + 16).append("' y1='").append(y2).append("' x2='").append(x2 + 30).append("' y2='").append(y2).append("'/>");
+        svg.append("<text x='").append(x2 + 30).append("' y='").append((y1 + y2) / 2).append("' transform='rotate(90 ").append(x2 + 30).append(' ').append((y1 + y2) / 2).append(")'>").append(formatNumber(siteDepth)).append("m</text>");
         svg.append("</g>");
     }
 
-    private void appendNorthArrow(StringBuilder svg, int width) {
-        svg.append("<g transform='translate(").append(width - 42).append(" 24)' font-family='Arial, sans-serif' fill='#0f172a'>")
-                .append("<path d='M 0 22 L 8 0 L 16 22 L 8 17 Z' fill='#0f172a'/>")
-                .append("<text x='3' y='36' font-size='12' font-weight='700'>N</text>")
+    private void appendDimensionChains(StringBuilder svg, List<FloorplanRoom> rooms, double siteWidth, double siteDepth) {
+        List<Double> xs = collectBreaks(rooms, true, siteWidth);
+        List<Double> ys = collectBreaks(rooms, false, siteDepth);
+        int topY = MARGIN - 7;
+        int leftX = MARGIN - 26;
+        svg.append("<g class='dim-text' stroke='#78716c' stroke-width='0.7' fill='#44403c'>");
+        for (int i = 0; i < xs.size() - 1; i++) {
+            int x1 = px(xs.get(i));
+            int x2 = px(xs.get(i + 1));
+            if (x2 - x1 < 18) continue;
+            svg.append("<line x1='").append(x1).append("' y1='").append(topY).append("' x2='").append(x2).append("' y2='").append(topY).append("'/>");
+            svg.append("<line x1='").append(x1).append("' y1='").append(topY - 4).append("' x2='").append(x1).append("' y2='").append(topY + 4).append("'/>");
+            svg.append("<text x='").append((x1 + x2) / 2).append("' y='").append(topY - 3).append("' text-anchor='middle'>").append(formatNumber(xs.get(i + 1) - xs.get(i))).append("</text>");
+        }
+        for (int i = 0; i < ys.size() - 1; i++) {
+            int y1 = px(ys.get(i));
+            int y2 = px(ys.get(i + 1));
+            if (y2 - y1 < 18) continue;
+            svg.append("<line x1='").append(leftX).append("' y1='").append(y1).append("' x2='").append(leftX).append("' y2='").append(y2).append("'/>");
+            svg.append("<line x1='").append(leftX - 4).append("' y1='").append(y1).append("' x2='").append(leftX + 4).append("' y2='").append(y1).append("'/>");
+            svg.append("<text x='").append(leftX - 4).append("' y='").append((y1 + y2) / 2).append("' text-anchor='end'>").append(formatNumber(ys.get(i + 1) - ys.get(i))).append("</text>");
+        }
+        svg.append("</g>");
+    }
+
+    private List<Double> collectBreaks(List<FloorplanRoom> rooms, boolean horizontal, double max) {
+        List<Double> values = new ArrayList<>();
+        values.add(0.0);
+        values.add(round(max));
+        for (FloorplanRoom room : rooms) {
+            values.add(horizontal ? room.x() : room.y());
+            values.add(horizontal ? round(room.x() + room.width()) : round(room.y() + room.depth()));
+        }
+        values.sort(Double::compareTo);
+        List<Double> compact = new ArrayList<>();
+        for (Double value : values) {
+            if (value < -0.001 || value > max + 0.001) {
+                continue;
+            }
+            if (compact.isEmpty() || Math.abs(compact.get(compact.size() - 1) - value) > 0.2) {
+                compact.add(round(value));
+            }
+        }
+        return compact;
+    }
+
+    private void appendNorthArrow(StringBuilder svg, int width, int height) {
+        svg.append("<g transform='translate(").append(width - 40).append(' ').append(height - 74).append(")' font-family='Arial, sans-serif' fill='#111827'>")
+                .append("<circle cx='8' cy='20' r='18' fill='#faf7ef' stroke='#57534e'/>")
+                .append("<path d='M 8 3 L 14 24 L 8 19 L 2 24 Z' fill='#111827'/>")
+                .append("<text x='4' y='44' font-size='11' font-weight='700'>N</text>")
                 .append("</g>");
     }
 
-    private void appendLegend(StringBuilder svg, int height) {
-        int y = height - 22;
-        svg.append("<g font-family='Arial, sans-serif' font-size='10' fill='#475569'>")
-                .append("<text x='48' y='").append(y).append("'>Tường đậm = tường bao | Nâu = cửa | Xanh = cửa sổ/thoáng | Diện tích hiển thị theo m²</text>")
+    private void appendLegend(StringBuilder svg, int width, int height) {
+        int y = height - 26;
+        int x = Math.max(48, width - 218);
+        svg.append("<g font-family='Arial, sans-serif' font-size='8.5' fill='#44403c'>")
+                .append("<rect x='").append(x - 8).append("' y='").append(y - 31).append("' width='200' height='38' fill='#faf7ef' stroke='#a8a29e'/>")
+                .append("<text x='").append(x).append("' y='").append(y - 19).append("' font-weight='700'>LEGEND</text>")
+                .append("<line x1='").append(x).append("' y1='").append(y - 10).append("' x2='").append(x + 22).append("' y2='").append(y - 10).append("' stroke='#111827' stroke-width='3'/>")
+                .append("<text x='").append(x + 28).append("' y='").append(y - 7).append("'>tường bao</text>")
+                .append("<line x1='").append(x + 88).append("' y1='").append(y - 10).append("' x2='").append(x + 111).append("' y2='").append(y - 10).append("' stroke='#b45309' stroke-width='2'/>")
+                .append("<text x='").append(x + 116).append("' y='").append(y - 7).append("'>cửa</text>")
+                .append("<line x1='").append(x).append("' y1='").append(y).append("' x2='").append(x + 44).append("' y2='").append(y).append("' stroke='#111827' stroke-width='2'/>")
+                .append("<text x='").append(x + 50).append("' y='").append(y + 3).append("'>thước 0-1m</text>")
                 .append("</g>");
     }
 
