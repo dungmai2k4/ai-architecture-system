@@ -8,7 +8,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 class RenderPromptGeneratorTest {
 
-    private final RenderPromptGenerator generator = new RenderPromptGenerator();
+    private final RenderPromptGenerator generator = new RenderPromptGenerator(new VietnameseRegionalDesignGuide());
 
     @Test
     void generateIncludesBriefLayoutAndFloorplanContext() {
