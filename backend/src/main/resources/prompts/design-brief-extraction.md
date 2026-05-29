@@ -24,6 +24,7 @@ Rules:
 - Use normalized English values for style when possible, for example "modern" or "traditional".
 - Use concise English room names in rooms, for example "living", "kitchen", "bedroom", "bathroom", "garage", "family room".
 - Put softer wishes such as "small front yard", "rear garden", "open kitchen", or "kitchen window" in preferences.
+- If the user mentions a Vietnamese region or city (for example Hà Nội/miền Bắc, Huế/Đà Nẵng/miền Trung, Sài Gòn/miền Nam), preserve that signal as a concise preference such as "northern Vietnam style", "central Vietnam style", or "southern Vietnam style".
 - Put hard restrictions in constraints. Use an empty array if there are none.
 - AI must not determine final room sizes, geometry, coordinates, walls, doors, or windows.
 

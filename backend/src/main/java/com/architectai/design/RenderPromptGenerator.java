@@ -9,7 +9,14 @@ import java.util.stream.Collectors;
 @Component
 public class RenderPromptGenerator {
 
+    private final VietnameseRegionalDesignGuide regionalDesignGuide;
+
+    public RenderPromptGenerator(VietnameseRegionalDesignGuide regionalDesignGuide) {
+        this.regionalDesignGuide = regionalDesignGuide;
+    }
+
     public String generate(DesignBrief brief, LayoutPlan layoutPlan, Floorplan floorplan) {
+        VietnameseRegionalDesignGuide.RegionalDesignProfile profile = regionalDesignGuide.resolve(brief);
         String rooms = describeRooms(floorplan.floors());
         String zoning = formatSentenceList(layoutPlan.zoning());
         String notes = formatSentenceList(layoutPlan.notes());
@@ -28,7 +35,11 @@ public class RenderPromptGenerator {
                 + brief.bathrooms()
                 + " bathroom(s), "
                 + normalizeStyle(brief.style())
-                + " style. Layout strategy: "
+                + " style, inspired by "
+                + profile.typology()
+                + ". Regional material palette: "
+                + profile.materialPalette()
+                + ". Layout strategy: "
                 + layoutPlan.strategy()
                 + ". Zoning: "
                 + zoning
@@ -40,7 +51,7 @@ public class RenderPromptGenerator {
                 + preferences
                 + ". Constraints: "
                 + constraints
-                + ". Render a clean front perspective and a bright interior mood board; realistic materials, natural daylight, compact Vietnamese urban housing proportions, no text labels, no dimensions, no people.";
+                + ". Render a clean front perspective and a bright interior mood board; realistic materials, natural daylight, compact Vietnamese urban housing proportions, climate-responsive facade with privacy screens and greenery, no text labels, no dimensions, no people.";
     }
 
     private String describeRooms(List<FloorplanLevel> floors) {

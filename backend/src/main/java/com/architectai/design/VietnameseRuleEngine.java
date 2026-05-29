@@ -8,8 +8,15 @@ import java.util.List;
 @Component
 public class VietnameseRuleEngine {
 
+    private final VietnameseRegionalDesignGuide regionalDesignGuide;
+
+    public VietnameseRuleEngine(VietnameseRegionalDesignGuide regionalDesignGuide) {
+        this.regionalDesignGuide = regionalDesignGuide;
+    }
+
     public RuleResult evaluate(DesignBrief designBrief) {
         List<String> warnings = new ArrayList<>();
+        VietnameseRegionalDesignGuide.RegionalDesignProfile profile = regionalDesignGuide.resolve(designBrief);
 
         double area = designBrief.siteWidthMeters() * designBrief.siteDepthMeters();
         if (area < 36) {
@@ -27,6 +34,8 @@ public class VietnameseRuleEngine {
         if (designBrief.siteDepthMeters() >= 20 && !containsRoom(designBrief.rooms(), "courtyard")) {
             warnings.add("Lô đất sâu từ 20m trở lên nên cân nhắc giếng trời hoặc sân trong để tăng thông gió.");
         }
+
+        warnings.add("Gợi ý bản sắc " + profile.region() + ": " + profile.layoutPrinciples().get(0));
 
         return new RuleResult(warnings);
     }
