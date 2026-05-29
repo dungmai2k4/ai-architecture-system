@@ -31,8 +31,16 @@ public class VietnameseRuleEngine {
             warnings.add("Số phòng ngủ cao nhưng số WC thấp, có thể gây quá tải giờ cao điểm.");
         }
 
-        if (designBrief.siteDepthMeters() >= 20 && !containsRoom(designBrief.rooms(), "courtyard")) {
+        if (designBrief.siteDepthMeters() >= 20 && !designBrief.lightwellRequired() && !containsRoom(designBrief.rooms(), "courtyard")) {
             warnings.add("Lô đất sâu từ 20m trở lên nên cân nhắc giếng trời hoặc sân trong để tăng thông gió.");
+        }
+
+        if (designBrief.parkingRequired() && designBrief.siteWidthMeters() < 3.8) {
+            warnings.add("Mặt tiền dưới 3.8m có nhu cầu để xe, cần kiểm tra bán kính quay xe và khoảng mở cửa an toàn.");
+        }
+
+        if (designBrief.openKitchen() && designBrief.bathrooms() > 0) {
+            warnings.add("Bếp mở cần tránh cửa WC nhìn trực tiếp vào khu bếp-ăn và nên có thông gió độc lập.");
         }
 
         warnings.add("Gợi ý bản sắc " + profile.region() + ": " + profile.layoutPrinciples().get(0));

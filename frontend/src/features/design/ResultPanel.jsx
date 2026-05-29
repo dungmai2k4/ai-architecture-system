@@ -39,6 +39,11 @@ function ResultPanel({ result }) {
             <KeyValue label="Số phòng ngủ" value={designBrief.bedrooms} />
             <KeyValue label="Số WC" value={designBrief.bathrooms} />
             <KeyValue label="Phong cách" value={designBrief.style} />
+            <KeyValue label="Hướng nhà" value={designBrief.orientation ?? "unknown"} />
+            <KeyValue label="Nhu cầu bố cục" value={formatLayoutIntent(designBrief)} />
+            <KeyValue label="Vị trí thang" value={designBrief.stairPreference ?? "unknown"} />
+            <KeyValue label="Quan hệ phòng" value={formatList(designBrief.adjacencyPreferences)} />
+            <KeyValue label="Yêu cầu theo tầng" value={formatFloorRequirements(designBrief.floorRequirements)} />
             <KeyValue label="Phòng yêu cầu" value={formatList(designBrief.rooms)} />
             <KeyValue label="Tùy chọn" value={formatList(designBrief.preferences)} />
           </dl>
@@ -298,6 +303,28 @@ function KeyValue({ label, value }) {
       <dd className="text-slate-900">{value}</dd>
     </div>
   );
+}
+
+function formatLayoutIntent(designBrief) {
+  const labels = [
+    designBrief.parkingRequired ? "cần chỗ để xe" : null,
+    designBrief.lightwellRequired ? "cần giếng trời/sân trong" : null,
+    designBrief.frontYardRequired ? "cần sân trước/hiên" : null,
+    designBrief.rearGardenRequired ? "cần sân sau/vườn sau" : null,
+    designBrief.openKitchen ? "bếp mở" : null,
+  ].filter(Boolean);
+
+  return labels.length > 0 ? labels.join(", ") : "-";
+}
+
+function formatFloorRequirements(value) {
+  if (!Array.isArray(value) || value.length === 0) {
+    return "-";
+  }
+
+  return value
+    .map((floor) => `Tầng ${floor.level}: ${formatList(floor.rooms)}`)
+    .join("; ");
 }
 
 function formatList(value) {

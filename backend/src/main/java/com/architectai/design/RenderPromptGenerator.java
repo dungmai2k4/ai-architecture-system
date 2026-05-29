@@ -22,6 +22,7 @@ public class RenderPromptGenerator {
         String notes = formatSentenceList(layoutPlan.notes());
         String preferences = formatList(brief.preferences());
         String constraints = formatList(brief.constraints());
+        String layoutIntent = describeLayoutIntent(brief);
 
         return "Architectural visualization prompt: Vietnamese townhouse on a "
                 + formatMeters(brief.siteWidthMeters())
@@ -47,11 +48,36 @@ public class RenderPromptGenerator {
                 + rooms
                 + ". Design notes: "
                 + notes
+                + ". Layout intent: "
+                + layoutIntent
                 + ". User preferences: "
                 + preferences
                 + ". Constraints: "
                 + constraints
                 + ". Render a clean front perspective and a bright interior mood board; realistic materials, natural daylight, compact Vietnamese urban housing proportions, climate-responsive facade with privacy screens and greenery, no text labels, no dimensions, no people.";
+    }
+
+    private String describeLayoutIntent(DesignBrief brief) {
+        String parking = brief.parkingRequired() ? "parking required" : "parking not specified";
+        String lightwell = brief.lightwellRequired() ? "lightwell or courtyard required" : "lightwell not specified";
+        String frontYard = brief.frontYardRequired() ? "front yard or porch required" : "front yard not specified";
+        String rearGarden = brief.rearGardenRequired() ? "rear garden or service yard required" : "rear garden not specified";
+        String openKitchen = brief.openKitchen() ? "open kitchen requested" : "open kitchen not specified";
+        String adjacency = formatList(brief.adjacencyPreferences(), "; ");
+        String floorRequirements = brief.floorRequirements().isEmpty()
+                ? "none"
+                : brief.floorRequirements().stream()
+                .map(requirement -> "floor " + requirement.level() + ": " + formatList(requirement.rooms()))
+                .collect(Collectors.joining("; "));
+        return "orientation " + brief.orientation()
+                + ", stair preference " + brief.stairPreference()
+                + ", " + parking
+                + ", " + lightwell
+                + ", " + frontYard
+                + ", " + rearGarden
+                + ", " + openKitchen
+                + ", adjacency wishes: " + adjacency
+                + ", floor requirements: " + floorRequirements;
     }
 
     private String describeRooms(List<FloorplanLevel> floors) {
