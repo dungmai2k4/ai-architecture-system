@@ -1,6 +1,6 @@
 package com.architectai.ai;
 
-import com.architectai.design.DesignBrief;
+import com.architectai.design.domain.DesignBrief;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.annotation.PostConstruct;

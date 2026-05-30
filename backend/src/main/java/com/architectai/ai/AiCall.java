@@ -1,6 +1,6 @@
 package com.architectai.ai;
 
-import com.architectai.design.DesignProject;
+import com.architectai.design.domain.DesignProject;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.FetchType;
