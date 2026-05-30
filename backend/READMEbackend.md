@@ -126,9 +126,11 @@ The backend uses local Ollama, not OpenAI.
 Config values:
 
 ```properties
-ollama.model=qwen2.5:3b
+ollama.model=qwen2.5-coder:7b
 ollama.base-url=http://localhost:11434/api/generate
 ```
+
+`qwen2.5-coder:7b` is the preferred local model for this backend because requirement extraction depends on deterministic JSON/schema output and Vietnamese prompts; `deepseek-coder:6.7b` remains a reasonable coding-focused alternative but is not the default.
 
 Request behavior:
 
@@ -471,7 +473,8 @@ Requirements:
 - Java 21+
 - MySQL 8+
 - Ollama
-- Ollama model `qwen2.5:3b`
+- Ollama model `qwen2.5-coder:7b`
+  - Preferred over `deepseek-coder:6.7b` for JSON/schema extraction from Vietnamese requirements.
 
 Create database:
 
@@ -490,7 +493,7 @@ spring.jpa.show-sql=true
 spring.jpa.properties.hibernate.format_sql=true
 spring.jpa.properties.hibernate.dialect=org.hibernate.dialect.MySQLDialect
 server.port=8080
-ollama.model=qwen2.5:3b
+ollama.model=qwen2.5-coder:7b
 ollama.base-url=http://localhost:11434/api/generate
 ```
 
