@@ -2,9 +2,9 @@
 
 React + Vite frontend for the ArchitectAI MVP.
 
-The current frontend implements one screen: a requirement form that calls the backend and displays the extracted `DesignBrief`.
+The current frontend implements one ChatGPT-style design workspace: a dark sidebar, conversation area, bottom composer, and assistant result card that calls the backend and displays the generated design output.
 
-The screen now displays extracted briefs, rule warnings, layout data, SVG floorplans, a simple Three.js preview, and a render prompt. Routing, polling, and canvas rendering are not implemented yet.
+The screen displays extracted briefs, rule warnings, layout data, SVG floorplans, a simple Three.js preview, and a render prompt. Routing, polling, and Konva canvas rendering are not implemented yet.
 
 ## React Architecture
 
@@ -17,6 +17,7 @@ App.jsx
   v
 DesignPage
   |
+  +-- Chat-style sidebar / message shell
   +-- RequirementForm
   +-- ResultPanel
 ```
@@ -65,9 +66,9 @@ frontend/
     +-- App.jsx                   # Renders DesignPage directly
     +-- index.css                 # Tailwind import
     +-- features/design/
-    |   +-- DesignPage.jsx        # Active screen, API call, loading/error/result state
-    |   +-- RequirementForm.jsx   # Textarea and submit button
-    |   +-- ResultPanel.jsx       # Displays project id, status, DesignBrief fields
+    |   +-- DesignPage.jsx        # Chat-style shell, API call, loading/error/result state
+    |   +-- RequirementForm.jsx   # Bottom chat composer and submit button
+    |   +-- ResultPanel.jsx       # Assistant result card with brief, layout, SVG, JSON, 3D, render prompt
     +-- components/
         +-- Sidebar.jsx           # Chat sidebar mock component, unused
         +-- ChatMessage.jsx       # Chat bubble component, unused
@@ -94,6 +95,7 @@ No routes, layouts, or page router files exist in `src/`.
 - `result`
 - `error`
 - `loading`
+- `submittedRequirement`
 
 There is no Redux, Zustand, Context state layer, or server-state library.
 
@@ -132,12 +134,12 @@ Axios is installed but not used by the current implementation.
 
 Current user flow:
 
-1. User types a Vietnamese house design requirement.
-2. User submits the form.
-3. Frontend calls the backend.
-4. Button shows loading text.
-5. If the backend fails, an error box is shown.
-6. If the backend succeeds, `ResultPanel` renders the extracted brief.
+1. User sees a ChatGPT-style empty state with suggested Vietnamese house prompts.
+2. User types a Vietnamese house design requirement in the bottom composer or picks a suggestion.
+3. Frontend renders the submitted requirement as a user message and calls the backend.
+4. The assistant message area shows a loading indicator while the backend generates the design.
+5. If the backend fails, an assistant error message is shown.
+6. If the backend succeeds, `ResultPanel` renders the generated design as an assistant artifact card.
 
 Displayed result fields:
 
@@ -148,33 +150,36 @@ Displayed result fields:
 - Bedrooms
 - Bathrooms
 - Style
+- Orientation and layout intent
+- Room relationships and floor requirements
 - Requested rooms
 - Preferences
+- Rule warnings
+- Layout guidance
+- SVG/JSON/3D floorplan tabs
 - Render prompt for optional image generation
-
-Note: some Vietnamese strings in current source files appear mojibake-encoded. This is a text encoding cleanup task.
 
 ## Component Structure
 
 ### `DesignPage.jsx`
 
-Owns the active screen.
+Owns the active chat-style screen.
 
 Responsibilities:
 
-- Track form text.
+- Track composer text.
+- Track the last submitted user message.
 - Submit to backend.
 - Track loading/error/result.
-- Render `RequirementForm`.
-- Render `ResultPanel`.
+- Render sidebar suggestions, empty state, user message, assistant shell, `RequirementForm`, and `ResultPanel`.
 
 ### `RequirementForm.jsx`
 
 Responsibilities:
 
-- Render textarea.
-- Render submit button.
-- Disable button while loading.
+- Render the fixed-bottom chat composer textarea.
+- Submit with the send button or Enter, while Shift+Enter keeps a newline.
+- Disable send while loading or empty.
 - Pass edits and submit event to parent.
 
 ### `ResultPanel.jsx`
@@ -185,6 +190,7 @@ Responsibilities:
 - Render backend error if present.
 - Render fallback text when `designBrief` is missing.
 - Render extracted `DesignBrief` fields.
+- Render layout guidance, warnings, SVG/JSON tabs, Three.js preview, and render prompt.
 
 ### Unused chat components
 
@@ -211,36 +217,19 @@ Current screen styling is simple and local to components.
 
 ## SVG Rendering
 
-SVG floorplan rendering is not implemented.
+SVG floorplan rendering is implemented in `ResultPanel.jsx`. The backend returns SVG content inside the floorplan payload, and the frontend converts it to a data URL for display in the SVG tab.
 
-There is no:
-
-- SVG viewer component.
-- `svg/` folder.
-- `canvas/` floorplan viewer.
-- backend SVG URL displayed in the UI.
-
-The current frontend only displays extracted JSON fields as text.
+There is still no separate `svg/` folder or dedicated backend SVG URL; the current MVP keeps the SVG inline in the API response.
 
 ## Three.js Preview
 
-3D preview is not implemented.
-
-Installed packages:
+A basic 3D preview is implemented inside `ResultPanel.jsx` using:
 
 - `three`
 - `@react-three/fiber`
 - `@react-three/drei`
 
-Missing from current source:
-
-- `three/` folder.
-- `Basic3DPreview.jsx`.
-- canvas scene.
-- wall extrusion logic.
-- orbit controls usage.
-
-When implemented, the 3D preview should consume backend-generated floorplan JSON. It should not invent geometry in the frontend.
+The preview consumes backend-generated floorplan JSON, extrudes rooms/walls/openings/furniture into simple meshes, and uses orbit controls. There is no separate `three/` folder yet; extracting this into a dedicated component is a future cleanup task.
 
 ## Canvas / Konva
 

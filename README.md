@@ -2,7 +2,7 @@
 
 MVP-first AI-powered Vietnamese housing floorplan generator.
 
-The current implementation accepts a Vietnamese housing requirement, extracts a structured `DesignBrief` with local Ollama, evaluates deterministic rules, generates a layout/floorplan, stores the result in MySQL, and displays SVG/JSON/3D previews plus a render prompt in the React frontend.
+The current implementation accepts a Vietnamese housing requirement through a ChatGPT-style React interface, extracts a structured `DesignBrief` with local Ollama, evaluates deterministic rules, generates a layout/floorplan, stores the result in MySQL, and displays SVG/JSON/3D previews plus a render prompt in the React frontend.
 
 ## MVP Philosophy
 
@@ -12,7 +12,7 @@ Keep the system small enough for one developer to ship quickly.
 AI extracts intent.
 Java validates and stores deterministic data.
 SVG will visualize the floorplan.
-React displays the result.
+React displays the result in a chat-style workspace.
 ```
 
 Do not add platform architecture before the vertical slice works.
@@ -43,7 +43,7 @@ There is no queue, worker, scheduler, Docker setup, migration system, or CI pipe
 
 ## Data Flow
 
-1. User submits a house requirement in the React form.
+1. User submits a house requirement in the React chat composer.
 2. Frontend calls `POST http://localhost:8080/api/designs`.
 3. Backend creates a `design_projects` row with status `PENDING`.
 4. Backend calls Ollama using `backend/src/main/resources/prompts/design-brief-extraction.md`.
@@ -52,7 +52,7 @@ There is no queue, worker, scheduler, Docker setup, migration system, or CI pipe
 7. Backend saves `design_outputs.design_brief_json`.
 8. Backend saves an `ai_calls` log row.
 9. Project becomes `COMPLETED` or `FAILED`.
-10. Frontend displays the response.
+10. Frontend displays the response as an assistant message with brief, warnings, layout, floorplan previews, and render prompt.
 
 ## Tech Stack
 
@@ -74,9 +74,12 @@ Frontend:
 - ESLint 10
 - Fetch API for the implemented backend call
 
+Used by the current frontend screen:
+
+- Three.js / React Three Fiber / Drei for the basic 3D preview
+
 Installed but not used by the current frontend screen:
 
-- Three.js / React Three Fiber / Drei
 - Konva / React Konva
 - Axios
 - Lucide React
@@ -98,8 +101,8 @@ Installed but not used by the current frontend screen:
 +-- frontend/                        # React + Vite app
 |   +-- READMEfrontend.md            # Frontend implementation details
 |   +-- src/
-|       +-- features/design/         # Active design form/result workflow
-|       +-- components/              # Unused chat-style components
+|       +-- features/design/         # Active ChatGPT-style design workflow
+|       +-- components/              # Legacy chat-style components not wired into App.jsx
 +-- prompts/                         # Extra prompt note file
 +-- docs/                            # Empty
 +-- assests/                         # Empty, misspelled folder name
@@ -138,8 +141,20 @@ Response:
     "style": "modern",
     "rooms": ["living", "kitchen", "bedroom", "bathroom"],
     "preferences": [],
-    "constraints": []
+    "constraints": [],
+    "orientation": "unknown",
+    "parkingRequired": false,
+    "lightwellRequired": true,
+    "frontYardRequired": false,
+    "rearGardenRequired": false,
+    "openKitchen": true,
+    "stairPreference": "middle",
+    "adjacencyPreferences": [],
+    "floorRequirements": []
   },
+  "ruleResult": { "warnings": [] },
+  "layoutPlan": { "strategy": "...", "zoning": [], "circulation": [], "notes": [] },
+  "floorplan": { "siteWidth": 5, "siteDepth": 20, "floors": [] },
   "renderPrompt": "Architectural visualization prompt: Vietnamese townhouse on a 5m x 20m urban lot...",
   "renderImagePath": null,
   "error": null
@@ -226,7 +241,7 @@ Do not add:
 - Create database tables
 - Implement `POST /api/designs`
 - Implement `GET /api/designs/{id}`
-- Create frontend design page and input form
+- Create frontend design page and input form/chat composer
 - Ensure end-to-end request works (even if output is mock)
 
 ---
@@ -237,7 +252,7 @@ Do not add:
 - Extract strict JSON `DesignBrief`
 - Add validation + fallback handling
 - Store `DesignBrief` in DB
-- Display extracted result in frontend
+- Display extracted result in frontend assistant response
 
 ---
 
@@ -255,7 +270,7 @@ Do not add:
 - Generate `LayoutPlan` deterministically
 - (Optional) use AI only for hints, not final layout
 - Store `layout_plan_json`
-- Display layout JSON in frontend
+- Display layout guidance/data in frontend
 
 ---
 
@@ -268,7 +283,7 @@ Do not add:
 - Store `floorplan_json`
 - Render SVG in backend
 - Save SVG file locally
-- Display SVG in frontend
+- Display SVG in frontend assistant response
 
 ---
 
@@ -276,7 +291,7 @@ Do not add:
 - Build `Basic3DPreview` (Three.js)
 - Render from `floorplan_json`
 - Simple wall extrusion + orbit controls
-- Add tabs: JSON / SVG / 3D
+- Add tabs: JSON / SVG / 3D in the assistant response card
 
 ---
 
