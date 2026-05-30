@@ -17,11 +17,13 @@ public class FloorplanGenerator {
         double siteDepth = brief.siteDepthMeters();
         int floorCount = Math.max(1, brief.floors());
 
-        FloorplanLevel firstFloor = createFirstFloor(siteWidth, siteDepth, floorCount);
+        DesignVariation variation = DesignVariation.from(brief);
+        FloorplanLevel firstFloor = createFirstFloor(siteWidth, siteDepth, floorCount, variation);
+        VerticalCore verticalCore = VerticalCore.from(firstFloor);
         List<FloorplanLevel> floors = new ArrayList<>();
         floors.add(firstFloor);
         for (int level = 2; level <= floorCount; level++) {
-            floors.add(createUpperFloor(siteWidth, siteDepth, level, floorCount, brief.bedrooms(), brief.bathrooms()));
+            floors.add(createUpperFloor(siteWidth, siteDepth, level, floorCount, brief.bedrooms(), brief.bathrooms(), verticalCore, variation));
         }
 
         return new Floorplan(
@@ -37,26 +39,27 @@ public class FloorplanGenerator {
         );
     }
 
-    private FloorplanLevel createFirstFloor(double siteWidth, double siteDepth, int floorCount) {
+    private FloorplanLevel createFirstFloor(double siteWidth, double siteDepth, int floorCount, DesignVariation variation) {
         boolean multiFloor = floorCount > 1;
         boolean hasElevator = floorCount >= 4;
         boolean wideSite = siteWidth >= 6.0;
         return wideSite
-                ? createWideFirstFloor(siteWidth, siteDepth, multiFloor, hasElevator)
-                : createTownhouseFirstFloor(siteWidth, siteDepth, multiFloor, hasElevator);
+                ? createWideFirstFloor(siteWidth, siteDepth, multiFloor, hasElevator, variation)
+                : createTownhouseFirstFloor(siteWidth, siteDepth, multiFloor, hasElevator, variation);
     }
 
     private FloorplanLevel createTownhouseFirstFloor(
             double siteWidth,
             double siteDepth,
             boolean multiFloor,
-            boolean hasElevator
+            boolean hasElevator,
+            DesignVariation variation
     ) {
         double frontYardDepth = siteDepth >= 15 ? round(Math.min(2.6, Math.max(1.2, siteDepth * 0.1))) : 0;
         double rearGardenDepth = siteDepth >= 17 ? round(Math.min(2.2, Math.max(1.0, siteDepth * 0.08))) : 0;
         double bodyY = frontYardDepth;
         double bodyDepth = round(siteDepth - frontYardDepth - rearGardenDepth);
-        double frontDepth = round(Math.min(5.0, Math.max(3.4, bodyDepth * 0.28)));
+        double frontDepth = round(Math.min(5.0, Math.max(3.4, bodyDepth * (0.26 + variation.frontBias()))));
         double coreDepth = round(Math.min(5.4, Math.max(3.8, bodyDepth * 0.28)));
         double rearDepth = round(bodyDepth - frontDepth - coreDepth);
         if (rearDepth < 3.4) {
@@ -139,15 +142,16 @@ public class FloorplanGenerator {
             double siteWidth,
             double siteDepth,
             boolean multiFloor,
-            boolean hasElevator
+            boolean hasElevator,
+            DesignVariation variation
     ) {
         double frontYardDepth = siteDepth >= 14 ? round(Math.min(3.4, Math.max(1.8, siteDepth * 0.14))) : 0;
         double rearGardenDepth = siteDepth >= 17 ? round(Math.min(2.4, Math.max(1.1, siteDepth * 0.09))) : 0;
         double bodyY = frontYardDepth;
         double bodyDepth = round(siteDepth - frontYardDepth - rearGardenDepth);
-        double leftWidth = round(siteWidth * 0.56);
+        double leftWidth = round(siteWidth * (0.53 + variation.widthBias()));
         double rightWidth = round(siteWidth - leftWidth);
-        double frontDepth = round(Math.min(5.0, Math.max(3.6, bodyDepth * 0.3)));
+        double frontDepth = round(Math.min(5.0, Math.max(3.6, bodyDepth * (0.28 + variation.frontBias()))));
         double midDepth = round(Math.min(5.3, Math.max(3.6, bodyDepth * 0.32)));
         double rearDepth = round(bodyDepth - frontDepth - midDepth);
         if (rearDepth < 3.4) {
@@ -225,7 +229,9 @@ public class FloorplanGenerator {
             int level,
             int floorCount,
             int bedrooms,
-            int bathrooms
+            int bathrooms,
+            VerticalCore verticalCore,
+            DesignVariation variation
     ) {
         boolean topFloor = level == floorCount && floorCount >= 3;
         boolean hasElevator = floorCount >= 4;
@@ -234,24 +240,25 @@ public class FloorplanGenerator {
         double rearTerraceDepth = topFloor ? round(Math.min(2.2, Math.max(1.1, siteDepth * 0.08))) : 0;
         double bodyY = balconyDepth;
         double bodyDepth = round(siteDepth - balconyDepth - rearTerraceDepth);
-        double frontDepth = round(Math.min(5.0, Math.max(3.6, bodyDepth * 0.34)));
-        double coreDepth = round(Math.min(5.2, Math.max(3.6, bodyDepth * 0.3)));
-        double rearDepth = round(bodyDepth - frontDepth - coreDepth);
+        double midY = verticalCore.y();
+        double frontDepth = round(Math.max(3.2, midY - bodyY));
+        double serviceWidth = verticalCore.width();
+        double serviceX = verticalCore.x();
+        double mainWidth = round(siteWidth - serviceWidth);
+        double mainX = serviceX <= 0.05 ? serviceWidth : 0;
+        double stairDepth = verticalCore.stairDepth();
+        double elevatorDepth = hasElevator ? verticalCore.elevatorDepth() : 0;
+        double coreDepth = round(Math.max(verticalCore.depth(), stairDepth + elevatorDepth + 1.15));
+        double rearY = round(midY + coreDepth);
+        double rearDepth = round(bodyDepth + bodyY - rearY);
         if (rearDepth < 3.2) {
             rearDepth = 3.2;
-            coreDepth = round(bodyDepth - frontDepth - rearDepth);
+            rearY = round(siteDepth - rearTerraceDepth - rearDepth);
+            coreDepth = round(rearY - midY);
         }
-        double serviceWidth = round(Math.min(hasElevator ? 2.75 : 2.1, Math.max(hasElevator ? 2.2 : 1.45, siteWidth * (wideSite ? 0.34 : 0.42))));
-        double mainWidth = round(siteWidth - serviceWidth);
-        double serviceX = wideSite ? 0 : mainWidth;
-        double mainX = wideSite ? serviceWidth : 0;
-        double midY = round(bodyY + frontDepth);
-        double rearY = round(midY + coreDepth);
-        double stairDepth = round(Math.min(2.55, Math.max(1.85, coreDepth * 0.48)));
-        double elevatorDepth = hasElevator ? 1.55 : 0;
         double wcY = round(midY + stairDepth + elevatorDepth);
         double wcDepth = round(Math.max(1.15, coreDepth - stairDepth - elevatorDepth));
-        double studyWidth = round(Math.max(1.35, mainWidth * 0.36));
+        double studyWidth = round(Math.max(1.35, mainWidth * (0.33 + variation.widthBias())));
         double rearBedroomWidth = round(mainWidth - studyWidth);
 
         List<FloorplanRoom> rooms = new ArrayList<>();
@@ -263,7 +270,10 @@ public class FloorplanGenerator {
         }
         rooms.add(room("wc_l" + level, bathrooms >= level ? "WC tầng " + level : "Kho/WC", "bathroom", serviceX, wcY, serviceWidth, wcDepth, "#dbeafe"));
         rooms.add(room("family_l" + level, "Sinh hoạt + thông tầng", "living", mainX, midY, mainWidth, coreDepth, "#cffafe"));
-        rooms.add(room("lightwell_l" + level, "Ô thoáng", "void", wideSite ? round(serviceWidth * 0.18) : round(mainX + mainWidth * 0.58), round(midY + 0.45), wideSite ? round(serviceWidth * 0.64) : round(mainWidth * 0.34), round(Math.max(1.35, coreDepth * 0.36)), "#ccfbf1"));
+        double lightwellX = verticalCore.isLeftCore()
+                ? round(serviceX + serviceWidth * 0.18)
+                : round(mainX + mainWidth * (variation.sideLightwell() ? 0.18 : 0.58));
+        rooms.add(room("lightwell_l" + level, "Ô thoáng", "void", lightwellX, round(midY + 0.45), verticalCore.isLeftCore() ? round(serviceWidth * 0.64) : round(mainWidth * 0.34), round(Math.max(1.35, coreDepth * 0.36)), "#ccfbf1"));
         if (topFloor) {
             rooms.add(room("laundry_l" + level, "Giặt phơi", "service", mainX, rearY, studyWidth, rearDepth, "#e2e8f0"));
             rooms.add(room("roof_garden_l" + level, "Vườn mái", "outdoor", round(mainX + studyWidth), rearY, rearBedroomWidth, rearDepth, "#bbf7d0"));
@@ -279,16 +289,17 @@ public class FloorplanGenerator {
         List<FloorplanDoor> doors = new ArrayList<>();
         doors.add(new FloorplanDoor("Cửa ban công", round(mainX + mainWidth / 2 - 0.8), balconyDepth, 1.6, "horizontal", "in"));
         doors.add(new FloorplanDoor("Cửa phòng trước", round(mainX + mainWidth / 2 - 0.45), bodyY, 0.9, "horizontal", "in"));
-        doors.add(new FloorplanDoor("Lối thang", wideSite ? serviceWidth : mainWidth, round(midY + 0.35), 0.85, "vertical", "in"));
-        doors.add(new FloorplanDoor("Cửa WC", wideSite ? serviceWidth : mainWidth, round(wcY + 0.2), 0.75, "vertical", "in"));
+        double coreDoorX = verticalCore.isLeftCore() ? serviceWidth : mainWidth;
+        doors.add(new FloorplanDoor("Lối thang", coreDoorX, round(midY + 0.35), 0.85, "vertical", "in"));
+        doors.add(new FloorplanDoor("Cửa WC", coreDoorX, round(wcY + 0.2), 0.75, "vertical", "in"));
         doors.add(new FloorplanDoor(topFloor ? "Cửa giặt phơi" : "Cửa phòng sau", round(mainX + rearBedroomWidth / 2 - 0.45), rearY, 0.9, "horizontal", "in"));
         doors.add(new FloorplanDoor(topFloor ? "Cửa vườn mái" : "Cửa góc học", round(mainX + rearBedroomWidth), round(rearY + 0.6), 0.8, "vertical", "in"));
 
         List<FloorplanWindow> windows = new ArrayList<>();
         windows.add(new FloorplanWindow("Thoáng phòng trước", round(mainX + mainWidth * 0.18), balconyDepth, round(mainWidth * 0.45), "horizontal"));
-        windows.add(new FloorplanWindow("Thoáng thông tầng", wideSite ? round(serviceWidth * 0.22) : round(mainX + mainWidth * 0.6), round(midY + 0.45), round(Math.min(1.8, coreDepth * 0.35)), wideSite ? "vertical" : "horizontal"));
+        windows.add(new FloorplanWindow("Thoáng thông tầng", lightwellX, round(midY + 0.45), round(Math.min(1.8, coreDepth * 0.35)), verticalCore.isLeftCore() ? "vertical" : "horizontal"));
         windows.add(new FloorplanWindow(topFloor ? "Thoáng vườn mái" : "Cửa sổ phòng sau", round(mainX + rearBedroomWidth * 0.18), siteDepth - rearTerraceDepth, round(Math.min(1.8, rearBedroomWidth * 0.48)), "horizontal"));
-        windows.add(new FloorplanWindow("Thoáng WC", wideSite ? 0 : siteWidth, round(wcY + 0.25), 0.75, "vertical"));
+        windows.add(new FloorplanWindow("Thoáng WC", verticalCore.isLeftCore() ? 0 : siteWidth, round(wcY + 0.25), 0.75, "vertical"));
 
         List<FloorplanFurniture> furniture = new ArrayList<>();
         furniture.add(new FloorplanFurniture(topFloor ? "Bàn thờ" : "Giường trước", topFloor ? "altar" : "bed", round(mainX + mainWidth / 2 - 1.05), round(bodyY + 0.75), 2.1, topFloor ? 0.75 : 1.8, 0, topFloor ? "#a855f7" : "#c4b5fd"));
@@ -308,6 +319,76 @@ public class FloorplanGenerator {
 
         String label = "Tầng " + level;
         return floor(level, label, siteWidth, siteDepth, rooms, walls, doors, windows, furniture);
+    }
+
+    private record VerticalCore(double x, double y, double width, double stairDepth, double elevatorDepth, double depth) {
+        static VerticalCore from(FloorplanLevel firstFloor) {
+            FloorplanRoom stairs = firstFloor.rooms().stream()
+                    .filter(room -> "stairs".equals(room.type()))
+                    .findFirst()
+                    .orElseThrow(() -> new IllegalStateException("Floorplan must contain a stair core"));
+            FloorplanRoom elevator = firstFloor.rooms().stream()
+                    .filter(room -> "elevator".equals(room.type()))
+                    .findFirst()
+                    .orElse(null);
+            FloorplanRoom wetCore = firstFloor.rooms().stream()
+                    .filter(room -> "bathroom".equals(room.type())
+                            && overlaps(room.x(), room.width(), stairs.x(), stairs.width())
+                            && room.y() >= stairs.y())
+                    .max((first, second) -> Double.compare(first.y() + first.depth(), second.y() + second.depth()))
+                    .orElse(stairs);
+            double elevatorDepth = elevator == null ? 0 : elevator.depth();
+            double bottom = Math.max(stairs.y() + stairs.depth(), wetCore.y() + wetCore.depth());
+            if (elevator != null) {
+                bottom = Math.max(bottom, elevator.y() + elevator.depth());
+            }
+            return new VerticalCore(stairs.x(), stairs.y(), stairs.width(), stairs.depth(), elevatorDepth, roundCore(bottom - stairs.y()));
+        }
+
+        boolean isLeftCore() {
+            return x <= 0.05;
+        }
+
+        private static boolean overlaps(double x1, double width1, double x2, double width2) {
+            return x1 < x2 + width2 && x2 < x1 + width1;
+        }
+
+        private static double roundCore(double value) {
+            return Math.round(value * 10.0) / 10.0;
+        }
+    }
+
+    private record DesignVariation(int index) {
+        static DesignVariation from(DesignBrief brief) {
+            String signal = String.join("|", safe(brief.style()), String.join(",", brief.preferences()), String.join(",", brief.constraints()), safe(brief.orientation()), safe(brief.stairPreference()));
+            return new DesignVariation(Math.floorMod(signal.hashCode(), 4));
+        }
+
+        double frontBias() {
+            return switch (index) {
+                case 1 -> 0.03;
+                case 2 -> -0.01;
+                case 3 -> 0.01;
+                default -> 0.02;
+            };
+        }
+
+        double widthBias() {
+            return switch (index) {
+                case 1 -> 0.03;
+                case 2 -> -0.02;
+                case 3 -> 0.01;
+                default -> 0;
+            };
+        }
+
+        boolean sideLightwell() {
+            return index == 1 || index == 3;
+        }
+
+        private static String safe(String value) {
+            return value == null ? "" : value;
+        }
     }
 
     private FloorplanLevel floor(

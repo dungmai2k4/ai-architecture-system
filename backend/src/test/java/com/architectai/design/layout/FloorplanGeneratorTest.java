@@ -62,4 +62,83 @@ class FloorplanGeneratorTest {
                                 .extracting(FloorplanRoom::label)
                                 .contains("Vườn mái", "Sân phơi sau");
         }
+
+        @Test
+        void keepsStairAndElevatorCoreAlignedAcrossAllFloors() {
+                DesignBrief brief = new DesignBrief(
+                                7,
+                                21,
+                                4,
+                                4,
+                                4,
+                                "modern",
+                                List.of("living", "kitchen", "bedroom"),
+                                List.of("warm wood"),
+                                List.of());
+
+                Floorplan floorplan = generator.generate(brief);
+                FloorplanRoom firstStair = coreRoom(floorplan.floors().get(0), "stairs");
+                FloorplanRoom firstElevator = coreRoom(floorplan.floors().get(0), "elevator");
+
+                assertThat(floorplan.floors())
+                                .allSatisfy(level -> {
+                                        FloorplanRoom stair = coreRoom(level, "stairs");
+                                        FloorplanRoom elevator = coreRoom(level, "elevator");
+                                        assertThat(stair.x()).isEqualTo(firstStair.x());
+                                        assertThat(stair.y()).isEqualTo(firstStair.y());
+                                        assertThat(stair.width()).isEqualTo(firstStair.width());
+                                        assertThat(elevator.x()).isEqualTo(firstElevator.x());
+                                        assertThat(elevator.y()).isEqualTo(firstElevator.y());
+                                        assertThat(elevator.width()).isEqualTo(firstElevator.width());
+                                });
+        }
+
+        @Test
+        void variesPlansWhenDesignSignalsChangeWithoutMovingVerticalCore() {
+                DesignBrief calmBrief = new DesignBrief(
+                                5,
+                                20,
+                                3,
+                                3,
+                                3,
+                                "minimal",
+                                List.of("living", "kitchen", "bedroom"),
+                                List.of("quiet courtyard"),
+                                List.of());
+                DesignBrief tropicalBrief = new DesignBrief(
+                                5,
+                                20,
+                                3,
+                                3,
+                                3,
+                                "tropical",
+                                List.of("living", "kitchen", "bedroom"),
+                                List.of("bold garden", "variant:3-101"),
+                                List.of());
+
+                Floorplan calmPlan = generator.generate(calmBrief);
+                Floorplan tropicalPlan = generator.generate(tropicalBrief);
+
+                assertThat(coreRoom(calmPlan.floors().get(1), "stairs").x())
+                                .isEqualTo(coreRoom(calmPlan.floors().get(0), "stairs").x());
+                assertThat(coreRoom(tropicalPlan.floors().get(1), "stairs").x())
+                                .isEqualTo(coreRoom(tropicalPlan.floors().get(0), "stairs").x());
+                assertThat(room(calmPlan.floors().get(0), "living").depth())
+                                .isNotEqualTo(room(tropicalPlan.floors().get(0), "living").depth());
+        }
+
+        private FloorplanRoom coreRoom(FloorplanLevel level, String type) {
+                return level.rooms().stream()
+                                .filter(room -> type.equals(room.type()))
+                                .findFirst()
+                                .orElseThrow();
+        }
+
+        private FloorplanRoom room(FloorplanLevel level, String id) {
+                return level.rooms().stream()
+                                .filter(room -> id.equals(room.name()))
+                                .findFirst()
+                                .orElseThrow();
+        }
+
 }
