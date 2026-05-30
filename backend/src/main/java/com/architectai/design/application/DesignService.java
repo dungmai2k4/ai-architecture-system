@@ -24,6 +24,12 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Instant;
+import java.util.ArrayList;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Locale;
+import java.util.Map;
+import java.util.Objects;
 
 @Service
 public class DesignService {
@@ -76,7 +82,7 @@ public class DesignService {
         try {
             RequirementExtractionResult extractionResult = requirementExtractor.extractWithRawResponse(requirement);
             rawAiResponse = extractionResult.rawResponse();
-            DesignBrief designBrief = extractionResult.designBrief();
+            DesignBrief designBrief = applyLearnedDesignMemory(extractionResult.designBrief());
             RuleResult ruleResult = vietnameseRuleEngine.evaluate(designBrief);
             LayoutPlan layoutPlan = layoutPlanner.plan(designBrief);
             Floorplan floorplan = floorplanGenerator.generate(designBrief);
@@ -103,6 +109,99 @@ public class DesignService {
             saveAiCall(savedProject, requirement, rawAiResponse, false, exception.getMessage());
 
             return new DesignResponse(savedProject.getId(), savedProject.getStatus(), null, null, null, null, null, null, exception.getMessage());
+        }
+    }
+
+    private DesignBrief applyLearnedDesignMemory(DesignBrief brief) {
+        List<DesignOutput> recentOutputs = designOutputRepository.findTop8ByOrderByUpdatedAtDesc();
+        List<DesignBrief> recentBriefs = recentOutputs.stream()
+                .map(DesignOutput::getDesignBriefJson)
+                .filter(json -> json != null && !json.isBlank())
+                .map(this::readNullableDesignBrief)
+                .filter(Objects::nonNull)
+                .toList();
+
+        List<String> learnedPreferences = new ArrayList<>(brief.preferences());
+        mostCommon(recentBriefs.stream()
+                .map(DesignBrief::style)
+                .filter(style -> style != null && !style.isBlank() && !"unknown".equalsIgnoreCase(style))
+                .map(style -> "học từ mẫu trước: biến tấu phong cách " + style.toLowerCase(Locale.ROOT) + " thay vì sao chép nguyên mẫu")
+                .toList(), 2)
+                .ifPresent(preference -> addIfMissing(learnedPreferences, preference));
+        mostCommon(recentBriefs.stream()
+                .flatMap(previous -> previous.preferences().stream())
+                .filter(preference -> preference != null && !preference.isBlank())
+                .map(preference -> "học từ mẫu trước: cân nhắc " + preference.toLowerCase(Locale.ROOT))
+                .toList(), 2)
+                .ifPresent(preference -> addIfMissing(learnedPreferences, preference));
+        addIfMissing(learnedPreferences, "variant:" + selectDiverseVariant(brief, recentBriefs));
+
+        return new DesignBrief(
+                brief.siteWidthMeters(),
+                brief.siteDepthMeters(),
+                brief.floors(),
+                brief.bedrooms(),
+                brief.bathrooms(),
+                brief.style(),
+                brief.rooms(),
+                learnedPreferences,
+                brief.constraints(),
+                brief.orientation(),
+                brief.parkingRequired(),
+                brief.lightwellRequired(),
+                brief.frontYardRequired(),
+                brief.rearGardenRequired(),
+                brief.openKitchen(),
+                brief.stairPreference(),
+                brief.adjacencyPreferences(),
+                brief.floorRequirements()
+        );
+    }
+
+    private DesignBrief readNullableDesignBrief(String json) {
+        try {
+            return objectMapper.readValue(json, DesignBrief.class);
+        } catch (JsonProcessingException exception) {
+            return null;
+        }
+    }
+
+    private java.util.Optional<String> mostCommon(List<String> values, int minimumCount) {
+        Map<String, Integer> counts = new LinkedHashMap<>();
+        for (String value : values) {
+            counts.merge(value, 1, Integer::sum);
+        }
+        return counts.entrySet().stream()
+                .filter(entry -> entry.getValue() >= minimumCount)
+                .max(Map.Entry.comparingByValue())
+                .map(Map.Entry::getKey);
+    }
+
+    private String selectDiverseVariant(DesignBrief brief, List<DesignBrief> recentBriefs) {
+        int[] usage = new int[4];
+        for (DesignBrief recentBrief : recentBriefs) {
+            usage[Math.floorMod(variantSignal(recentBrief).hashCode(), usage.length)]++;
+        }
+        int leastUsed = 0;
+        for (int index = 1; index < usage.length; index++) {
+            if (usage[index] < usage[leastUsed]) {
+                leastUsed = index;
+            }
+        }
+        return leastUsed + "-" + Math.floorMod(variantSignal(brief).hashCode(), 1000);
+    }
+
+    private String variantSignal(DesignBrief brief) {
+        return String.join("|", safe(brief.style()), safe(brief.orientation()), safe(brief.stairPreference()), String.join(",", brief.rooms()));
+    }
+
+    private String safe(String value) {
+        return value == null ? "" : value;
+    }
+
+    private void addIfMissing(List<String> values, String value) {
+        if (values.stream().noneMatch(existing -> existing.equalsIgnoreCase(value))) {
+            values.add(value);
         }
     }
 
