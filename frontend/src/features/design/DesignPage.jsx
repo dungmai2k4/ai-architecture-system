@@ -61,8 +61,8 @@ function DesignPage() {
   }
 
   return (
-    <main className="flex min-h-screen bg-[#212121] text-neutral-100">
-      <aside className="hidden w-72 shrink-0 border-r border-white/10 bg-[#171717] p-3 lg:flex lg:flex-col">
+    <main className="flex h-screen overflow-hidden bg-[#212121] text-neutral-100">
+      <aside className="hidden h-screen w-72 shrink-0 overflow-y-auto border-r border-white/10 bg-[#171717] p-3 lg:flex lg:flex-col">
         <button
           type="button"
           onClick={startNewConversation}
@@ -92,7 +92,7 @@ function DesignPage() {
         </div>
       </aside>
 
-      <section className="flex min-w-0 flex-1 flex-col">
+      <section className="relative flex h-screen min-w-0 flex-1 flex-col overflow-hidden">
         <header className="sticky top-0 z-10 flex items-center justify-between border-b border-white/10 bg-[#212121]/90 px-4 py-3 backdrop-blur md:px-6">
           <div>
             <h1 className="text-base font-semibold md:text-lg">ArchitectAI</h1>
@@ -143,7 +143,7 @@ function DesignPage() {
           </div>
         </div>
 
-        <div className="fixed inset-x-0 bottom-0 border-t border-white/10 bg-[#212121]/95 px-4 pb-4 pt-3 backdrop-blur lg:left-72 md:px-6">
+        <div className="absolute inset-x-0 bottom-0 border-t border-white/10 bg-[#212121]/95 px-4 pb-4 pt-3 backdrop-blur md:px-6">
           <div className="mx-auto max-w-4xl">
             <RequirementForm
               requirement={requirement}

@@ -2,7 +2,7 @@
 
 React + Vite frontend for the ArchitectAI MVP.
 
-The current frontend implements one ChatGPT-style design workspace: a dark sidebar, conversation area, bottom composer, and assistant result card that calls the backend and displays the generated design output.
+The current frontend implements one ChatGPT-style design workspace: a dark fixed-height sidebar, internally scrollable conversation area, bottom composer, and assistant result card that calls the backend and displays the generated design output.
 
 The screen displays extracted briefs, rule warnings, layout data, SVG floorplans, a simple Three.js preview, and a render prompt. Routing, polling, and Konva canvas rendering are not implemented yet.
 
@@ -213,7 +213,7 @@ There is no:
 - styled-components.
 - design token file.
 
-Current screen styling is simple and local to components.
+Current screen styling is simple and local to components. The main shell uses a `h-screen`/`overflow-hidden` layout so only the conversation panel scrolls; the desktop sidebar stays anchored while long results scroll inside the chat area.
 
 ## SVG Rendering
 
