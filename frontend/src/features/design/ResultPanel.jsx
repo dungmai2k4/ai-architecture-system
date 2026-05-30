@@ -10,25 +10,25 @@ function ResultPanel({ result }) {
   const renderPrompt = result?.renderPrompt;
 
   return (
-    <section className="mt-6 rounded-md border border-slate-200 bg-white p-4">
-      <h2 className="text-lg font-semibold">Kết quả</h2>
-      <p className="mt-3">Project ID: {result.projectId}</p>
-      <p>Trạng thái: {result.status}</p>
+    <section className="rounded-3xl border border-white/10 bg-[#2f2f2f] p-4 text-neutral-100 shadow-xl md:p-5">
+      <h2 className="text-lg font-semibold">Phương án thiết kế sơ bộ</h2>
+      <p className="mt-3 text-sm text-neutral-400">Project ID: {result.projectId}</p>
+      <p className="text-sm text-neutral-400">Trạng thái: {result.status}</p>
 
       {result.error && (
-        <p className="mt-4 rounded-md border border-red-200 bg-red-50 p-3 text-red-700">
+        <p className="mt-4 rounded-2xl border border-red-400/30 bg-red-500/10 p-3 text-red-100">
           {result.error}
         </p>
       )}
 
       {!designBrief && (
-        <div className="mt-4 rounded-md border border-yellow-300 bg-yellow-50 p-3 text-yellow-800">
+        <div className="mt-4 rounded-2xl border border-yellow-400/30 bg-yellow-500/10 p-3 text-yellow-100">
           Chưa có thông tin thiết kế được trích xuất.
         </div>
       )}
 
       {designBrief && (
-        <div className="mt-5 rounded-md border border-slate-200 p-4">
+        <div className="mt-5 rounded-2xl border border-white/10 bg-white/[0.03] p-4">
           <h3 className="font-semibold">Thông tin thiết kế</h3>
           <dl className="mt-3 grid gap-2 text-sm">
             <KeyValue
@@ -51,8 +51,8 @@ function ResultPanel({ result }) {
       )}
 
       {layoutPlan && (
-        <div className="mt-4 rounded-md border border-emerald-200 bg-emerald-50 p-4">
-          <h3 className="font-semibold text-emerald-800">Gợi ý bố trí sơ bộ</h3>
+        <div className="mt-4 rounded-2xl border border-emerald-400/20 bg-emerald-400/10 p-4">
+          <h3 className="font-semibold text-emerald-100">Gợi ý bố trí sơ bộ</h3>
           <dl className="mt-2 grid gap-2 text-sm">
             <KeyValue label="Chiến lược" value={layoutPlan.strategy} />
             <KeyValue label="Phân khu" value={formatList(layoutPlan.zoning)} />
@@ -67,9 +67,9 @@ function ResultPanel({ result }) {
       {renderPrompt && <RenderPromptSection prompt={renderPrompt} imagePath={result.renderImagePath} />}
 
       {warnings.length > 0 && (
-        <div className="mt-4 rounded-md border border-amber-200 bg-amber-50 p-4">
-          <h3 className="font-semibold text-amber-800">Cảnh báo quy tắc</h3>
-          <ul className="mt-2 list-disc space-y-1 pl-5 text-sm text-amber-900">
+        <div className="mt-4 rounded-2xl border border-amber-400/20 bg-amber-400/10 p-4">
+          <h3 className="font-semibold text-amber-100">Cảnh báo quy tắc</h3>
+          <ul className="mt-2 list-disc space-y-1 pl-5 text-sm text-amber-100/90">
             {warnings.map((warning) => (
               <li key={warning}>{warning}</li>
             ))}
@@ -83,16 +83,16 @@ function ResultPanel({ result }) {
 
 function RenderPromptSection({ prompt, imagePath }) {
   return (
-    <div className="mt-4 rounded-md border border-violet-200 bg-violet-50 p-4">
-      <h3 className="font-semibold text-violet-800">Prompt render gợi ý</h3>
-      <p className="mt-1 text-sm text-violet-900">
+    <div className="mt-4 rounded-2xl border border-violet-400/20 bg-violet-400/10 p-4">
+      <h3 className="font-semibold text-violet-100">Prompt render gợi ý</h3>
+      <p className="mt-1 text-sm text-violet-100/80">
         Dùng prompt này cho bước tạo ảnh phối cảnh/mood board sau khi đã duyệt mặt bằng.
       </p>
-      <pre className="mt-3 whitespace-pre-wrap rounded border border-violet-100 bg-white p-3 text-xs leading-5 text-slate-700">
+      <pre className="mt-3 whitespace-pre-wrap rounded-2xl border border-white/10 bg-black/20 p-3 text-xs leading-5 text-neutral-200">
         {prompt}
       </pre>
       {imagePath && (
-        <p className="mt-2 text-sm text-violet-900">Ảnh render: {imagePath}</p>
+        <p className="mt-2 text-sm text-violet-100/80">Ảnh render: {imagePath}</p>
       )}
     </div>
   );
@@ -110,9 +110,9 @@ function FloorplanSection({ floorplan }) {
   const selectedFloor = floors.find((floor) => floor.level === activeLevel) ?? floors[0];
 
   return (
-    <div className="mt-4 rounded-md border border-cyan-200 bg-cyan-50 p-4">
-      <h3 className="font-semibold text-cyan-800">Mặt bằng sơ bộ {selectedFloor.label ?? `tầng ${selectedFloor.level ?? 1}`}</h3>
-      <p className="mt-1 text-sm text-cyan-900">
+    <div className="mt-4 rounded-2xl border border-cyan-400/20 bg-cyan-400/10 p-4">
+      <h3 className="font-semibold text-cyan-100">Mặt bằng sơ bộ {selectedFloor.label ?? `tầng ${selectedFloor.level ?? 1}`}</h3>
+      <p className="mt-1 text-sm text-cyan-100/80">
         Kích thước: {selectedFloor.siteWidth}m x {selectedFloor.siteDepth}m · {selectedFloor.rooms?.length ?? 0} khu vực · {selectedFloor.doors?.length ?? 0} cửa · {selectedFloor.windows?.length ?? 0} cửa sổ/thoáng
       </p>
 
@@ -125,8 +125,8 @@ function FloorplanSection({ floorplan }) {
               onClick={() => setActiveLevel(floor.level)}
               className={`rounded border px-3 py-1 text-sm ${
                 selectedFloor.level === floor.level
-                  ? "border-slate-900 bg-slate-900 text-white"
-                  : "border-cyan-200 bg-white text-slate-700"
+                  ? "border-white bg-white text-neutral-950"
+                  : "border-white/10 bg-white/[0.04] text-neutral-200 hover:bg-white/10"
               }`}
             >
               {floor.label ?? `Tầng ${floor.level}`}
@@ -143,8 +143,8 @@ function FloorplanSection({ floorplan }) {
             onClick={() => setActiveTab(tab.id)}
             className={`rounded border px-3 py-1 text-sm ${
               activeTab === tab.id
-                ? "border-cyan-700 bg-cyan-700 text-white"
-                : "border-cyan-200 bg-white text-cyan-800"
+                ? "border-white bg-white text-neutral-950"
+                : "border-white/10 bg-white/[0.04] text-cyan-100 hover:bg-white/10"
             }`}
           >
             {tab.label}
@@ -153,23 +153,23 @@ function FloorplanSection({ floorplan }) {
       </div>
 
       {activeTab === "svg" && (
-        <div className="mt-3 overflow-auto rounded border border-cyan-100 bg-white p-2">
+        <div className="mt-3 overflow-auto rounded-2xl border border-white/10 bg-white p-2">
           <img
             src={toSvgDataUrl(selectedFloor.svg)}
             alt={`Mặt bằng sơ bộ ${selectedFloor.label ?? ""}`}
-            className="mx-auto h-auto max-h-[70vh] w-full rounded border border-slate-100 bg-slate-50 object-contain"
+            className="mx-auto h-auto max-h-[70vh] w-full rounded-xl border border-neutral-200 bg-slate-50 object-contain"
           />
         </div>
       )}
 
       {activeTab === "json" && (
-        <pre className="mt-3 max-h-72 overflow-auto rounded border border-cyan-100 bg-white p-3 text-xs text-slate-700">
+        <pre className="mt-3 max-h-72 overflow-auto rounded-2xl border border-white/10 bg-black/20 p-3 text-xs text-neutral-200">
           {JSON.stringify(selectedFloor, null, 2)}
         </pre>
       )}
 
       {activeTab === "preview3d" && (
-        <div className="mt-3 h-80 overflow-hidden rounded border border-cyan-100 bg-slate-950">
+        <div className="mt-3 h-80 overflow-hidden rounded-2xl border border-white/10 bg-slate-950">
           <Basic3DPreview floorplan={selectedFloor} />
         </div>
       )}
@@ -298,9 +298,9 @@ function toSvgDataUrl(svg) {
 
 function KeyValue({ label, value }) {
   return (
-    <div className="grid gap-1 border-b border-slate-100 pb-2 sm:grid-cols-2">
-      <dt className="font-medium text-slate-600">{label}</dt>
-      <dd className="text-slate-900">{value}</dd>
+    <div className="grid gap-1 border-b border-white/10 pb-2 sm:grid-cols-2">
+      <dt className="font-medium text-neutral-400">{label}</dt>
+      <dd className="text-neutral-100">{value}</dd>
     </div>
   );
 }
