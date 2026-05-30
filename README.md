@@ -154,7 +154,8 @@ Requirements:
 - Node.js 18+
 - MySQL 8+
 - Ollama
-- Ollama model `qwen2.5:3b`
+- Ollama model `qwen2.5-coder:7b`
+  - Chosen over `deepseek-coder:6.7b` because this app needs reliable JSON/schema extraction and Vietnamese natural-language understanding in addition to code-like structured output.
 
 Create the database:
 
@@ -165,7 +166,7 @@ CREATE DATABASE architect_ai;
 Pull the model:
 
 ```bash
-ollama pull qwen2.5:3b
+ollama pull qwen2.5-coder:7b
 ```
 
 Run backend:

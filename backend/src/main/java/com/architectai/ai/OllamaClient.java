@@ -19,7 +19,7 @@ public class OllamaClient {
 
     public OllamaClient(
             @Value("${ollama.base-url:http://localhost:11434/api/generate}") String baseUrl,
-            @Value("${ollama.model:qwen2.5:3b}") String model
+            @Value("${ollama.model:qwen2.5-coder:7b}") String model
     ) {
         this.restTemplate = new RestTemplate();
         this.baseUrl = baseUrl;

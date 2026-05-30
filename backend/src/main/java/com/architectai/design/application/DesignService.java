@@ -49,7 +49,7 @@ public class DesignService {
             FloorplanGenerator floorplanGenerator,
             RenderPromptGenerator renderPromptGenerator,
             ObjectMapper objectMapper,
-            @Value("${ollama.model:qwen2.5:7b-instruct}") String model
+            @Value("${ollama.model:qwen2.5-coder:7b}") String model
     ) {
         this.designRepository = designRepository;
         this.designOutputRepository = designOutputRepository;
