@@ -1,6 +1,8 @@
 package com.architectai.design.application;
 
 import com.architectai.design.api.DesignResponse;
+import com.architectai.design.architecture.ArchitecturalDesignPackage;
+import com.architectai.design.architecture.ArchitecturalDesignPackageGenerator;
 import com.architectai.design.domain.DesignBrief;
 import com.architectai.design.domain.DesignOutput;
 import com.architectai.design.domain.DesignProject;
@@ -42,6 +44,7 @@ public class DesignService {
     private final LayoutPlanner layoutPlanner;
     private final FloorplanGenerator floorplanGenerator;
     private final RenderPromptGenerator renderPromptGenerator;
+    private final ArchitecturalDesignPackageGenerator architecturalDesignPackageGenerator;
     private final ObjectMapper objectMapper;
     private final String model;
 
@@ -54,6 +57,7 @@ public class DesignService {
             LayoutPlanner layoutPlanner,
             FloorplanGenerator floorplanGenerator,
             RenderPromptGenerator renderPromptGenerator,
+            ArchitecturalDesignPackageGenerator architecturalDesignPackageGenerator,
             ObjectMapper objectMapper,
             @Value("${ollama.model:qwen2.5-coder:7b}") String model
     ) {
@@ -65,6 +69,7 @@ public class DesignService {
         this.layoutPlanner = layoutPlanner;
         this.floorplanGenerator = floorplanGenerator;
         this.renderPromptGenerator = renderPromptGenerator;
+        this.architecturalDesignPackageGenerator = architecturalDesignPackageGenerator;
         this.objectMapper = objectMapper;
         this.model = model;
     }
@@ -87,6 +92,7 @@ public class DesignService {
             LayoutPlan layoutPlan = layoutPlanner.plan(designBrief);
             Floorplan floorplan = floorplanGenerator.generate(designBrief);
             String renderPrompt = renderPromptGenerator.generate(designBrief, layoutPlan, floorplan);
+            ArchitecturalDesignPackage architecturalDesignPackage = architecturalDesignPackageGenerator.generate(designBrief, layoutPlan, floorplan, renderPrompt);
 
             DesignOutput output = new DesignOutput();
             output.setProject(savedProject);
@@ -94,6 +100,7 @@ public class DesignService {
             output.setRuleResultJson(objectMapper.writeValueAsString(ruleResult));
             output.setLayoutPlanJson(objectMapper.writeValueAsString(layoutPlan));
             output.setFloorplanJson(objectMapper.writeValueAsString(floorplan));
+            output.setArchitecturalDesignPackageJson(objectMapper.writeValueAsString(architecturalDesignPackage));
             output.setSvgPath(floorplan.svg());
             output.setRenderPrompt(renderPrompt);
             designOutputRepository.save(output);
@@ -102,13 +109,13 @@ public class DesignService {
             designRepository.save(savedProject);
             saveAiCall(savedProject, requirement, rawAiResponse, true, null);
 
-            return new DesignResponse(savedProject.getId(), savedProject.getStatus(), designBrief, ruleResult, layoutPlan, floorplan, renderPrompt, null, null);
+            return new DesignResponse(savedProject.getId(), savedProject.getStatus(), designBrief, ruleResult, layoutPlan, floorplan, architecturalDesignPackage, renderPrompt, null, null);
         } catch (Exception exception) {
             savedProject.setStatus("FAILED");
             designRepository.save(savedProject);
             saveAiCall(savedProject, requirement, rawAiResponse, false, exception.getMessage());
 
-            return new DesignResponse(savedProject.getId(), savedProject.getStatus(), null, null, null, null, null, null, exception.getMessage());
+            return new DesignResponse(savedProject.getId(), savedProject.getStatus(), null, null, null, null, null, null, null, exception.getMessage());
         }
     }
 
@@ -147,6 +154,7 @@ public class DesignService {
                 learnedPreferences,
                 brief.constraints(),
                 brief.orientation(),
+                brief.location(),
                 brief.parkingRequired(),
                 brief.lightwellRequired(),
                 brief.frontYardRequired(),
@@ -215,6 +223,7 @@ public class DesignService {
                         loadRuleResult(project.getId()),
                         loadLayoutPlan(project.getId()),
                         loadFloorplan(project.getId()),
+                        loadArchitecturalDesignPackage(project.getId()),
                         loadRenderPrompt(project.getId()),
                         loadRenderImagePath(project.getId()),
                         null
@@ -267,6 +276,22 @@ public class DesignService {
             return objectMapper.readValue(json, LayoutPlan.class);
         } catch (JsonProcessingException exception) {
             throw new IllegalStateException("Stored layout plan JSON is invalid", exception);
+        }
+    }
+
+    private ArchitecturalDesignPackage loadArchitecturalDesignPackage(Long projectId) {
+        return designOutputRepository.findByProjectId(projectId)
+                .map(DesignOutput::getArchitecturalDesignPackageJson)
+                .filter(json -> json != null && !json.isBlank())
+                .map(this::readArchitecturalDesignPackage)
+                .orElse(null);
+    }
+
+    private ArchitecturalDesignPackage readArchitecturalDesignPackage(String json) {
+        try {
+            return objectMapper.readValue(json, ArchitecturalDesignPackage.class);
+        } catch (JsonProcessingException exception) {
+            throw new IllegalStateException("Stored architectural design package JSON is invalid", exception);
         }
     }
 

@@ -3,9 +3,9 @@ import RequirementForm from "./RequirementForm";
 import ResultPanel from "./ResultPanel";
 
 const EXAMPLE_PROMPTS = [
-  "Nhà phố 5x20m, 2 tầng, 3 phòng ngủ, có giếng trời và bếp mở.",
-  "Biệt thự 8x18m, 3 tầng, 4 phòng ngủ, có gara và sân sau.",
-  "Nhà ống hướng tây 4x16m, 2 tầng, cần chống nóng và thông gió tốt.",
+  "Nhà phố 5x20m ở TP.HCM, 3 tầng, 4 phòng ngủ, có giếng trời, mặt đứng nhiệt đới hiện đại.",
+  "Biệt thự vườn 10x24m ở Đà Nẵng, mái Nhật, sân trong, hồ nước và facade chống nắng.",
+  "Nhà nhiều thế hệ 7x22m hướng tây, có phòng ông bà tầng 1, sân trong và mái xanh.",
 ];
 
 function DesignPage() {
@@ -88,7 +88,7 @@ function DesignPage() {
 
         <div className="mt-auto rounded-xl border border-white/10 bg-white/[0.03] p-3 text-xs leading-5 text-neutral-400">
           <p className="font-semibold text-neutral-200">ArchitectAI</p>
-          <p>MVP tạo mặt bằng nhà ở Việt Nam bằng AI extraction + Java deterministic layout.</p>
+          <p>Nền tảng thiết kế nhà ở Việt Nam: typology, khí hậu, mặt bằng, mái, mặt cắt, mặt đứng và render prompt.</p>
         </div>
       </aside>
 
@@ -96,7 +96,7 @@ function DesignPage() {
         <header className="sticky top-0 z-10 flex items-center justify-between border-b border-white/10 bg-[#212121]/90 px-4 py-3 backdrop-blur md:px-6">
           <div>
             <h1 className="text-base font-semibold md:text-lg">ArchitectAI</h1>
-            <p className="text-xs text-neutral-400">Trợ lý thiết kế mặt bằng kiểu hội thoại</p>
+            <p className="text-xs text-neutral-400">Trợ lý thiết kế kiến trúc Việt Nam từ mặt bằng đến mặt đứng</p>
           </div>
           <button
             type="button"

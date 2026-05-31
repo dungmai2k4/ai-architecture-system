@@ -38,6 +38,9 @@ public class DesignOutput {
     @Column(name = "floorplan_json", columnDefinition = "LONGTEXT")
     private String floorplanJson;
 
+    @Column(name = "architectural_design_package_json", columnDefinition = "LONGTEXT")
+    private String architecturalDesignPackageJson;
+
     @Column(name = "svg_path", columnDefinition = "LONGTEXT")
     private String svgPath;
 
@@ -107,6 +110,14 @@ public class DesignOutput {
 
     public void setFloorplanJson(String floorplanJson) {
         this.floorplanJson = floorplanJson;
+    }
+
+    public String getArchitecturalDesignPackageJson() {
+        return architecturalDesignPackageJson;
+    }
+
+    public void setArchitecturalDesignPackageJson(String architecturalDesignPackageJson) {
+        this.architecturalDesignPackageJson = architecturalDesignPackageJson;
     }
 
     public String getSvgPath() {

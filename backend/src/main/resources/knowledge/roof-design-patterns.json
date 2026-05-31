@@ -1,0 +1,9 @@
+[
+  {"type": "flat roof", "slope": 2, "features": ["roof garden", "solar ready terrace", "hidden drainage"]},
+  {"type": "mono pitch roof", "slope": 8, "features": ["high clerestory", "rainwater collection"]},
+  {"type": "gable roof", "slope": 25, "features": ["vented ridge", "deep eaves"]},
+  {"type": "hip roof", "slope": 22, "features": ["storm resistant eaves", "balanced drainage"]},
+  {"type": "thai roof", "slope": 30, "features": ["layered silhouette", "large overhang"]},
+  {"type": "japanese roof", "slope": 18, "features": ["calm horizontal eaves", "timber soffit"]},
+  {"type": "green roof", "slope": 3, "features": ["planted insulation", "detention layer", "maintenance path"]}
+]

@@ -1,0 +1,50 @@
+[
+  {
+    "code": "townhouse",
+    "name": "Townhouse",
+    "patterns": ["side-courtyard", "central-courtyard"],
+    "priorities": ["compact vertical circulation", "lightwell for deep narrow lots", "privacy from street"]
+  },
+  {
+    "code": "courtyard-house",
+    "name": "Courtyard House",
+    "patterns": ["central-courtyard", "front-courtyard"],
+    "priorities": ["family rooms around planted void", "cross ventilation", "calm interior microclimate"]
+  },
+  {
+    "code": "tropical-villa",
+    "name": "Tropical Villa",
+    "patterns": ["l-shaped-layout", "u-shaped-layout"],
+    "priorities": ["wide overhangs", "indoor outdoor rooms", "garden buffers"]
+  },
+  {
+    "code": "modern-villa",
+    "name": "Modern Villa",
+    "patterns": ["front-courtyard", "double-loaded-corridor"],
+    "priorities": ["clear volumes", "large glazing with shading", "terraces"]
+  },
+  {
+    "code": "rural-l-shaped-house",
+    "name": "Rural L-Shaped House",
+    "patterns": ["l-shaped-layout"],
+    "priorities": ["yard-facing veranda", "service wing", "rain protected porch"]
+  },
+  {
+    "code": "rural-u-shaped-house",
+    "name": "Rural U-Shaped House",
+    "patterns": ["u-shaped-layout"],
+    "priorities": ["protected family courtyard", "ceremonial front room", "garden edge"]
+  },
+  {
+    "code": "multi-generation-house",
+    "name": "Multi Generation House",
+    "patterns": ["multi-generation-cluster", "central-courtyard"],
+    "priorities": ["ground-floor elderly bedroom", "shared family hall", "privacy between generations"]
+  },
+  {
+    "code": "riverside-house",
+    "name": "Riverside House",
+    "patterns": ["side-courtyard", "l-shaped-layout"],
+    "priorities": ["raised floor datum", "river-facing terrace", "humid air ventilation"]
+  }
+]

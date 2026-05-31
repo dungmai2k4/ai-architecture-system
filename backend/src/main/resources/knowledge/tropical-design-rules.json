@@ -1,0 +1,6 @@
+{
+  "shading": ["deep roof overhangs", "vertical fins for east and west facades", "perforated screens for privacy and sun control"],
+  "ventilation": ["cross ventilation through front-back openings", "stack ventilation via stair void or skylight", "operable louvers for humid weather"],
+  "daylight": ["diffuse daylight through courtyard", "avoid unshaded west glazing", "use skylight over stair or planted void"],
+  "greenBuffers": ["front tree buffer", "balcony planters", "rear service garden", "water feature for courtyard microclimate"]
+}

@@ -7,6 +7,7 @@ function ResultPanel({ result }) {
   const warnings = result?.ruleResult?.warnings ?? [];
   const layoutPlan = result?.layoutPlan;
   const floorplan = result?.floorplan;
+  const designPackage = result?.architecturalDesignPackage;
   const renderPrompt = result?.renderPrompt;
 
   return (
@@ -62,9 +63,11 @@ function ResultPanel({ result }) {
         </div>
       )}
 
+      {designPackage && <ArchitecturalPackageSection designPackage={designPackage} />}
+
       {floorplan && <FloorplanSection floorplan={floorplan} />}
 
-      {renderPrompt && <RenderPromptSection prompt={renderPrompt} imagePath={result.renderImagePath} />}
+      {renderPrompt && <RenderPromptSection prompt={renderPrompt} designPackage={designPackage} imagePath={result.renderImagePath} />}
 
       {warnings.length > 0 && (
         <div className="mt-4 rounded-2xl border border-amber-400/20 bg-amber-400/10 p-4">
@@ -81,7 +84,74 @@ function ResultPanel({ result }) {
 }
 
 
-function RenderPromptSection({ prompt, imagePath }) {
+function ArchitecturalPackageSection({ designPackage }) {
+  const typology = designPackage.typology;
+  const climate = designPackage.climateAnalysis;
+  const courtyard = designPackage.courtyardPlan;
+  const roof = designPackage.roofPlan;
+  const facade = designPackage.facadeComposition;
+  const style = designPackage.exteriorStyle;
+  const landscape = designPackage.landscapePlan;
+  const sections = designPackage.buildingSections ?? [];
+
+  return (
+    <div className="mt-4 rounded-2xl border border-sky-400/20 bg-sky-400/10 p-4">
+      <h3 className="font-semibold text-sky-100">Gói thiết kế kiến trúc Việt Nam</h3>
+      <p className="mt-1 text-sm text-sky-100/80">
+        Mở rộng từ mặt bằng sang typology, khí hậu, sân trong, mái, mặt cắt, mặt đứng và concept ngoại thất.
+      </p>
+
+      <div className="mt-3 grid gap-3 text-sm lg:grid-cols-2">
+        <PackageCard title="Loại hình công trình">
+          <KeyValue label="Typology" value={`${typology?.name ?? "-"} (${typology?.code ?? "-"})`} />
+          <KeyValue label="Lý do chọn" value={formatList(typology?.fitReasons)} />
+          <KeyValue label="Ưu tiên" value={formatList(typology?.planningPriorities)} />
+        </PackageCard>
+
+        <PackageCard title="Phân tích khí hậu">
+          <KeyValue label="Vùng khí hậu" value={climate?.climateZone ?? "-"} />
+          <KeyValue label="Che nắng" value={formatList(climate?.shadingStrategy)} />
+          <KeyValue label="Thông gió" value={formatList(climate?.ventilationStrategy)} />
+        </PackageCard>
+
+        <PackageCard title="Sân trong / khoảng rỗng">
+          <KeyValue label="Loại" value={courtyard?.type ?? "-"} />
+          <KeyValue label="Kích thước" value={courtyard ? `${courtyard.width}m x ${courtyard.depth}m tại (${courtyard.x}, ${courtyard.y})` : "-"} />
+          <KeyValue label="Cây + skylight" value={`${formatList(courtyard?.treePlacement)} · ${formatList(courtyard?.skylightPlacement)}`} />
+        </PackageCard>
+
+        <PackageCard title="Mái và mặt cắt">
+          <KeyValue label="Mái" value={roof ? `${roof.roofType}, dốc ${roof.slopeDegrees}°, đua mái ${roof.overhangMeters}m` : "-"} />
+          <KeyValue label="Thoát nước" value={formatList(roof?.drainageStrategy)} />
+          <KeyValue label="Mặt cắt" value={formatList(sections.map((section) => section.name))} />
+        </PackageCard>
+
+        <PackageCard title="Mặt đứng">
+          <KeyValue label="Bố cục" value={facade ? `${facade.compositionType}, ${facade.bays} nhịp` : "-"} />
+          <KeyValue label="Ban công" value={formatList(facade?.balconies)} />
+          <KeyValue label="Lam/screen" value={`${formatList(facade?.verticalFins)} · ${formatList(facade?.sunScreens)}`} />
+        </PackageCard>
+
+        <PackageCard title="Ngoại thất + cảnh quan">
+          <KeyValue label="Phong cách" value={style?.name ?? "-"} />
+          <KeyValue label="Vật liệu" value={formatList(style?.materialPalette)} />
+          <KeyValue label="Cảnh quan" value={`${formatList(landscape?.frontLandscape)} · ${formatList(landscape?.courtyardLandscape)}`} />
+        </PackageCard>
+      </div>
+    </div>
+  );
+}
+
+function PackageCard({ title, children }) {
+  return (
+    <div className="rounded-2xl border border-white/10 bg-black/10 p-3">
+      <h4 className="mb-2 font-semibold text-sky-50">{title}</h4>
+      <dl className="grid gap-2">{children}</dl>
+    </div>
+  );
+}
+
+function RenderPromptSection({ prompt, designPackage, imagePath }) {
   return (
     <div className="mt-4 rounded-2xl border border-violet-400/20 bg-violet-400/10 p-4">
       <h3 className="font-semibold text-violet-100">Prompt render gợi ý</h3>
@@ -91,9 +161,27 @@ function RenderPromptSection({ prompt, imagePath }) {
       <pre className="mt-3 whitespace-pre-wrap rounded-2xl border border-white/10 bg-black/20 p-3 text-xs leading-5 text-neutral-200">
         {prompt}
       </pre>
+      {designPackage?.renderPrompts && (
+        <div className="mt-3 grid gap-3 md:grid-cols-2">
+          <PromptBlock title="Ngoại thất" value={designPackage.renderPrompts.exteriorPrompt} />
+          <PromptBlock title="Sân trong" value={designPackage.renderPrompts.courtyardPrompt} />
+          <PromptBlock title="Mặt đứng" value={designPackage.renderPrompts.facadePrompt} />
+          <PromptBlock title="Mái + mặt cắt" value={designPackage.renderPrompts.roofAndSectionPrompt} />
+        </div>
+      )}
       {imagePath && (
         <p className="mt-2 text-sm text-violet-100/80">Ảnh render: {imagePath}</p>
       )}
+    </div>
+  );
+}
+
+function PromptBlock({ title, value }) {
+  if (!value) return null;
+  return (
+    <div className="rounded-2xl border border-white/10 bg-black/10 p-3">
+      <p className="text-xs font-semibold uppercase tracking-[0.16em] text-violet-100/70">{title}</p>
+      <p className="mt-2 text-xs leading-5 text-neutral-200">{value}</p>
     </div>
   );
 }

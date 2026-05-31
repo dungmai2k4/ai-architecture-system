@@ -1,5 +1,6 @@
 package com.architectai.design.api;
 
+import com.architectai.design.architecture.ArchitecturalDesignPackage;
 import com.architectai.design.domain.DesignBrief;
 import com.architectai.design.layout.Floorplan;
 import com.architectai.design.layout.LayoutPlan;
@@ -11,6 +12,7 @@ public record DesignResponse(
         RuleResult ruleResult,
         LayoutPlan layoutPlan,
         Floorplan floorplan,
+        ArchitecturalDesignPackage architecturalDesignPackage,
         String renderPrompt,
         String renderImagePath,
         String error

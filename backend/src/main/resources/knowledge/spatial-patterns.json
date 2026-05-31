@@ -1,0 +1,58 @@
+[
+  {
+    "code": "central-courtyard",
+    "name": "Central Courtyard",
+    "intent": "Use a planted void in the middle of a deep house to divide public and private zones.",
+    "zones": ["street buffer", "living", "courtyard", "stair and wet core", "kitchen or bedrooms"],
+    "circulationRules": ["circulate along one edge of the courtyard", "keep wet core adjacent to the void"],
+    "suitableTypologies": ["townhouse", "courtyard-house", "multi-generation-house"]
+  },
+  {
+    "code": "front-courtyard",
+    "name": "Front Courtyard",
+    "intent": "Create a shaded arrival garden before the main living room.",
+    "zones": ["gate", "front garden", "living", "core", "rear service"],
+    "circulationRules": ["use porch as transition", "avoid direct view from street to dining"],
+    "suitableTypologies": ["courtyard-house", "modern-villa", "tropical-villa"]
+  },
+  {
+    "code": "side-courtyard",
+    "name": "Side Courtyard",
+    "intent": "Place a slim green void beside the stair and living spaces for cross ventilation.",
+    "zones": ["main room band", "side void", "service core", "rear garden"],
+    "circulationRules": ["keep rooms opening to the side void", "use sliding screens along the garden edge"],
+    "suitableTypologies": ["townhouse", "riverside-house"]
+  },
+  {
+    "code": "l-shaped-layout",
+    "name": "L-Shaped Layout",
+    "intent": "Wrap rooms around a protected garden corner.",
+    "zones": ["front wing", "side wing", "garden court", "service tail"],
+    "circulationRules": ["veranda links the two wings", "keep bedrooms away from service yard"],
+    "suitableTypologies": ["tropical-villa", "rural-l-shaped-house", "riverside-house"]
+  },
+  {
+    "code": "u-shaped-layout",
+    "name": "U-Shaped Layout",
+    "intent": "Form a family courtyard protected by three building wings.",
+    "zones": ["public wing", "bedroom wing", "service wing", "central garden"],
+    "circulationRules": ["all wings face the courtyard", "use deep roof overhangs around veranda"],
+    "suitableTypologies": ["rural-u-shaped-house", "tropical-villa"]
+  },
+  {
+    "code": "double-loaded-corridor",
+    "name": "Double Loaded Corridor",
+    "intent": "Use a compact corridor for dense multi-room programs when the site is wide enough.",
+    "zones": ["front rooms", "central corridor", "rear rooms", "wet core"],
+    "circulationRules": ["terminate corridor with window or courtyard", "avoid dark dead-end halls"],
+    "suitableTypologies": ["modern-villa"]
+  },
+  {
+    "code": "multi-generation-cluster",
+    "name": "Multi Generation Cluster",
+    "intent": "Cluster independent suites around shared family spaces.",
+    "zones": ["elderly suite", "shared living", "young family suite", "courtyard", "service core"],
+    "circulationRules": ["provide short accessible route to elderly suite", "separate quiet and active rooms"],
+    "suitableTypologies": ["multi-generation-house"]
+  }
+]
