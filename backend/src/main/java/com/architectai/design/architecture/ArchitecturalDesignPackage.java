@@ -16,6 +16,7 @@ public record ArchitecturalDesignPackage(
         FacadeComposition facadeComposition,
         ExteriorStyle exteriorStyle,
         LandscapePlan landscapePlan,
+        ArchitecturalDrawings architecturalDrawings,
         RenderPrompts renderPrompts
 ) {
 }

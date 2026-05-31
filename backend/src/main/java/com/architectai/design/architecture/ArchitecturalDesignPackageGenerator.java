@@ -19,6 +19,7 @@ public class ArchitecturalDesignPackageGenerator {
     private final SectionGenerator sectionGenerator;
     private final FacadeCompositionEngine facadeCompositionEngine;
     private final LandscapePlanner landscapePlanner;
+    private final ArchitecturalDrawingGenerator architecturalDrawingGenerator;
 
     public ArchitecturalDesignPackageGenerator(
             TypologyEngine typologyEngine,
@@ -29,7 +30,8 @@ public class ArchitecturalDesignPackageGenerator {
             RoofGenerator roofGenerator,
             SectionGenerator sectionGenerator,
             FacadeCompositionEngine facadeCompositionEngine,
-            LandscapePlanner landscapePlanner
+            LandscapePlanner landscapePlanner,
+            ArchitecturalDrawingGenerator architecturalDrawingGenerator
     ) {
         this.typologyEngine = typologyEngine;
         this.spatialPatternLibrary = spatialPatternLibrary;
@@ -40,6 +42,7 @@ public class ArchitecturalDesignPackageGenerator {
         this.sectionGenerator = sectionGenerator;
         this.facadeCompositionEngine = facadeCompositionEngine;
         this.landscapePlanner = landscapePlanner;
+        this.architecturalDrawingGenerator = architecturalDrawingGenerator;
     }
 
     public ArchitecturalDesignPackage generate(DesignBrief brief, LayoutPlan layoutPlan, Floorplan floorplan, String baseRenderPrompt) {
@@ -60,6 +63,7 @@ public class ArchitecturalDesignPackageGenerator {
         List<BuildingSection> sections = sectionGenerator.generate(brief, roofPlan, courtyard);
         FacadeComposition facade = facadeCompositionEngine.compose(brief, typology, climate, exteriorStyle);
         LandscapePlan landscape = landscapePlanner.plan(brief, courtyard, exteriorStyle);
+        ArchitecturalDrawings drawings = architecturalDrawingGenerator.generate(brief, roofPlan, sections, facade, exteriorStyle, courtyard);
         RenderPrompts prompts = createRenderPrompts(baseRenderPrompt, typology, climate, courtyard, roofPlan, facade, exteriorStyle, landscape, layoutPlan);
 
         return new ArchitecturalDesignPackage(
@@ -74,6 +78,7 @@ public class ArchitecturalDesignPackageGenerator {
                 facade,
                 exteriorStyle,
                 landscape,
+                drawings,
                 prompts
         );
     }

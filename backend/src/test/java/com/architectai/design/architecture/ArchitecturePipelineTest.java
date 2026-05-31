@@ -22,6 +22,7 @@ class ArchitecturePipelineTest {
     private final SectionGenerator sectionGenerator = new SectionGenerator();
     private final FacadeCompositionEngine facadeCompositionEngine = new FacadeCompositionEngine();
     private final LandscapePlanner landscapePlanner = new LandscapePlanner();
+    private final ArchitecturalDrawingGenerator architecturalDrawingGenerator = new ArchitecturalDrawingGenerator();
     private final ArchitecturalDesignPackageGenerator packageGenerator = new ArchitecturalDesignPackageGenerator(
             typologyEngine,
             spatialPatternLibrary,
@@ -31,7 +32,8 @@ class ArchitecturePipelineTest {
             roofGenerator,
             sectionGenerator,
             facadeCompositionEngine,
-            landscapePlanner
+            landscapePlanner,
+            architecturalDrawingGenerator
     );
 
     @Test
@@ -76,6 +78,10 @@ class ArchitecturePipelineTest {
         assertThat(designPackage.facadeComposition().balconies()).hasSizeGreaterThanOrEqualTo(2);
         assertThat(designPackage.exteriorStyle().materialPalette()).isNotEmpty();
         assertThat(designPackage.landscapePlan().courtyardLandscape()).isNotEmpty();
+        assertThat(designPackage.architecturalDrawings().exteriorPerspective().svg()).contains("<svg");
+        assertThat(designPackage.architecturalDrawings().roofPlan().svg()).contains("Mặt bằng mái");
+        assertThat(designPackage.architecturalDrawings().frontElevation().svg()).contains("Mặt đứng chính");
+        assertThat(designPackage.architecturalDrawings().longitudinalSection().svg()).contains("Mặt cắt dọc");
         assertThat(designPackage.renderPrompts().facadePrompt()).contains("Front elevation render");
     }
 }
