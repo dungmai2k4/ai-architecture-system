@@ -245,7 +245,7 @@ function FloorplanSection({ floorplan }) {
           <img
             src={toSvgDataUrl(selectedFloor.svg)}
             alt={`Mặt bằng sơ bộ ${selectedFloor.label ?? ""}`}
-            className="mx-auto h-auto max-h-[70vh] w-full rounded-xl border border-neutral-200 bg-slate-50 object-contain"
+            className="mx-auto h-auto max-h-[70vh] max-w-none rounded-xl border border-neutral-200 bg-slate-50 object-contain"
           />
         </div>
       )}

@@ -10,7 +10,9 @@ import java.util.List;
 public class FloorplanGenerator {
 
     private static final int SCALE = 34;
-    private static final int MARGIN = 48;
+    private static final int MARGIN = 64;
+    private static final int LEGEND_HEIGHT = 58;
+    private static final int SIDE_NOTE_WIDTH = 24;
 
     public Floorplan generate(DesignBrief brief) {
         double siteWidth = brief.siteWidthMeters();
@@ -519,9 +521,9 @@ public class FloorplanGenerator {
     ) {
         int planWidth = toPixels(siteWidth);
         int planHeight = toPixels(siteDepth);
-        int width = planWidth + MARGIN * 2;
-        int height = planHeight + MARGIN * 2;
-        int titleY = 20;
+        int width = planWidth + MARGIN * 2 + SIDE_NOTE_WIDTH;
+        int height = planHeight + MARGIN * 2 + LEGEND_HEIGHT;
+        int titleY = 22;
 
         StringBuilder svg = new StringBuilder();
         svg.append("<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 ").append(width).append(' ').append(height).append("'>");
@@ -532,7 +534,7 @@ public class FloorplanGenerator {
                 .append("<pattern id='wetTile' width='12' height='12' patternUnits='userSpaceOnUse'><path d='M0 0h12v12H0z' fill='#dbeafe'/><path d='M0 12L12 0M-3 3L3 -3M9 15l6-6' stroke='#93c5fd' stroke-width='0.55' opacity='0.65'/></pattern>")
                 .append("<pattern id='voidHatch' width='10' height='10' patternUnits='userSpaceOnUse'><path d='M0 10L10 0' stroke='#2dd4bf' stroke-width='1' opacity='0.45'/></pattern>")
                 .append("<style>")
-                .append(".room-label{font-family:Arial,sans-serif;font-size:11px;font-weight:700;fill:#1f2937}.room-meta{font-family:Arial,sans-serif;font-size:9px;fill:#64748b}.dim-text{font-family:Arial,sans-serif;font-size:9px;fill:#374151}.thin{vector-effect:non-scaling-stroke}")
+                .append(".room-label{font-family:Arial,sans-serif;font-size:10px;font-weight:700;fill:#111827}.room-meta{font-family:Arial,sans-serif;font-size:8px;fill:#475569}.opening-label{font-family:Arial,sans-serif;font-size:6.8px;font-weight:700;fill:#92400e;paint-order:stroke;stroke:#fff7ed;stroke-width:2px;stroke-linejoin:round}.dim-text{font-family:Arial,sans-serif;font-size:8px;fill:#374151}.thin{vector-effect:non-scaling-stroke}")
                 .append("</style>")
                 .append("</defs>");
         svg.append("<rect width='100%' height='100%' fill='#efe9dc'/>");
@@ -588,10 +590,17 @@ public class FloorplanGenerator {
                 .append("' fill='").append(baseFill).append("' stroke='#a8a29e' stroke-width='0.8'/>");
         svg.append("<rect x='").append(x + 2).append("' y='").append(y + 2).append("' width='").append(Math.max(0, w - 4)).append("' height='").append(Math.max(0, d - 4))
                 .append("' fill='").append(fill).append("' fill-opacity='0.72' stroke='none'/>");
-        svg.append("<text class='room-label' x='").append(x + 7).append("' y='").append(y + 16).append("'>")
-                .append(escape(room.label())).append("</text>");
-        svg.append("<text class='room-meta' x='").append(x + 7).append("' y='").append(y + 30).append("'>")
-                .append(formatArea(room.width() * room.depth())).append(" m² · ").append(formatNumber(room.width())).append("×").append(formatNumber(room.depth())).append("m</text>");
+        String label = fitText(room.label(), w - 12, 10);
+        if (!label.isBlank() && w >= 34 && d >= 22) {
+            svg.append("<rect x='").append(x + 4).append("' y='").append(y + 5).append("' width='").append(Math.min(w - 8, Math.max(26, label.length() * 5 + 8))).append("' height='15' rx='3' fill='#ffffff' fill-opacity='0.64'/>");
+            svg.append("<text class='room-label' x='").append(x + 7).append("' y='").append(y + 16).append("'>")
+                    .append(escape(label)).append("</text>");
+        }
+        String meta = fitText(formatArea(room.width() * room.depth()) + " m² · " + formatNumber(room.width()) + "×" + formatNumber(room.depth()) + "m", w - 12, 8);
+        if (!meta.isBlank() && w >= 54 && d >= 42) {
+            svg.append("<text class='room-meta' x='").append(x + 7).append("' y='").append(y + 30).append("'>")
+                    .append(escape(meta)).append("</text>");
+        }
     }
 
     private void appendRoomDecoration(StringBuilder svg, FloorplanRoom room) {
@@ -700,8 +709,12 @@ public class FloorplanGenerator {
             svg.append("<line x1='").append(x).append("' y1='").append(y).append("' x2='").append(x + w).append("' y2='").append(y).append("'/>");
             svg.append("<path d='M ").append(x).append(' ').append(y).append(" Q ").append(x + w / 2).append(' ').append(y + w).append(' ').append(x + w).append(' ').append(y).append("'/>");
         }
-        svg.append("<text x='").append(x + 3).append("' y='").append(y - 3).append("' font-family='Arial, sans-serif' font-size='7' fill='#92400e'>")
-                .append(escape(door.label())).append("</text></g>");
+        String label = fitText(door.label(), w + 20, 7);
+        if (!label.isBlank() && w >= 24) {
+            svg.append("<text class='opening-label' x='").append(x + 3).append("' y='").append(y - 3).append("'>")
+                    .append(escape(label)).append("</text>");
+        }
+        svg.append("</g>");
     }
 
     private void appendWindow(StringBuilder svg, FloorplanWindow window) {
@@ -739,8 +752,8 @@ public class FloorplanGenerator {
     private void appendDimensionChains(StringBuilder svg, List<FloorplanRoom> rooms, double siteWidth, double siteDepth) {
         List<Double> xs = collectBreaks(rooms, true, siteWidth);
         List<Double> ys = collectBreaks(rooms, false, siteDepth);
-        int topY = MARGIN - 7;
-        int leftX = MARGIN - 26;
+        int topY = MARGIN - 9;
+        int leftX = MARGIN - 28;
         svg.append("<g class='dim-text' stroke='#78716c' stroke-width='0.7' fill='#44403c'>");
         for (int i = 0; i < xs.size() - 1; i++) {
             int x1 = px(xs.get(i));
@@ -783,16 +796,18 @@ public class FloorplanGenerator {
     }
 
     private void appendNorthArrow(StringBuilder svg, int width, int height) {
-        svg.append("<g transform='translate(").append(width - 40).append(' ').append(height - 74).append(")' font-family='Arial, sans-serif' fill='#111827'>")
-                .append("<circle cx='8' cy='20' r='18' fill='#faf7ef' stroke='#57534e'/>")
-                .append("<path d='M 8 3 L 14 24 L 8 19 L 2 24 Z' fill='#111827'/>")
-                .append("<text x='4' y='44' font-size='11' font-weight='700'>N</text>")
+        int planRight = width - MARGIN - SIDE_NOTE_WIDTH;
+        int planBottom = height - MARGIN - LEGEND_HEIGHT;
+        svg.append("<g transform='translate(").append(planRight + 4).append(' ').append(Math.max(MARGIN + 8, planBottom - 48)).append(")' font-family='Arial, sans-serif' fill='#111827'>")
+                .append("<circle cx='8' cy='20' r='16' fill='#faf7ef' stroke='#57534e'/>")
+                .append("<path d='M 8 5 L 13 23 L 8 19 L 3 23 Z' fill='#111827'/>")
+                .append("<text x='4' y='42' font-size='10' font-weight='700'>N</text>")
                 .append("</g>");
     }
 
     private void appendLegend(StringBuilder svg, int width, int height) {
-        int y = height - 26;
-        int x = Math.max(48, width - 218);
+        int y = height - 32;
+        int x = MARGIN;
         svg.append("<g font-family='Arial, sans-serif' font-size='8.5' fill='#44403c'>")
                 .append("<rect x='").append(x - 8).append("' y='").append(y - 31).append("' width='200' height='38' fill='#faf7ef' stroke='#a8a29e'/>")
                 .append("<text x='").append(x).append("' y='").append(y - 19).append("' font-weight='700'>LEGEND</text>")
@@ -830,6 +845,17 @@ public class FloorplanGenerator {
             return String.valueOf((int) Math.rint(value));
         }
         return String.format(java.util.Locale.US, "%.1f", value);
+    }
+
+    private String fitText(String value, int maxPixels, int averageCharWidth) {
+        if (value == null || maxPixels < averageCharWidth * 3) {
+            return "";
+        }
+        int maxChars = Math.max(3, maxPixels / averageCharWidth);
+        if (value.length() <= maxChars) {
+            return value;
+        }
+        return value.substring(0, Math.max(1, maxChars - 1)).stripTrailing() + "…";
     }
 
     private String escape(String value) {
