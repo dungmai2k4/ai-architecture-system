@@ -17,6 +17,7 @@ The JSON object must match this exact schema and use no extra keys:
   "preferences": string[],
   "constraints": string[],
   "orientation": string,
+  "location": string,
   "parkingRequired": boolean,
   "lightwellRequired": boolean,
   "frontYardRequired": boolean,
@@ -41,6 +42,7 @@ Rules:
 - If the user mentions a Vietnamese region or city (for example Hà Nội/miền Bắc, Huế/Đà Nẵng/miền Trung, Sài Gòn/miền Nam), preserve that signal as a concise preference such as "northern Vietnam style", "central Vietnam style", or "southern Vietnam style".
 - Put hard restrictions in constraints. Use an empty array if there are none.
 - Extract orientation from phrases such as "hướng đông", "hướng tây", "west-facing", or "nhà hướng nam". Use one of "north", "south", "east", "west", "northeast", "northwest", "southeast", "southwest", or "unknown".
+- Extract location from phrases naming a province, city, region, riverside, rural, coastal, mountain, or urban context. Use concise values such as "Hanoi", "Da Nang", "Ho Chi Minh City", "Mekong Delta", "riverside", "rural northern Vietnam", or "unknown".
 - Set parkingRequired to true when the user asks for a garage, car parking, motorbike parking, or "chỗ để xe".
 - Set lightwellRequired to true when the user asks for "giếng trời", "sân trong", "ô thoáng", strong daylight, or ventilation through the middle of a deep house.
 - Set frontYardRequired and rearGardenRequired from explicit front yard, porch, back yard, rear garden, laundry yard, or garden wishes.
@@ -59,6 +61,7 @@ Defaults:
 - If preferences cannot be determined, use [].
 - If constraints cannot be determined, use [].
 - If orientation cannot be determined, use "unknown".
+- If location cannot be determined, use "unknown".
 - If parking, lightwell, front yard, rear garden, open kitchen, or stair preference cannot be determined, use false for booleans and "unknown" for stairPreference.
 - If adjacencyPreferences cannot be determined, use [].
 - If floorRequirements cannot be determined, use [].

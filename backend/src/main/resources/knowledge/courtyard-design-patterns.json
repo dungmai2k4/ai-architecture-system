@@ -1,0 +1,5 @@
+[
+  {"type": "central", "features": ["small tree", "water bowl", "openable skylight"]},
+  {"type": "front", "features": ["shade tree", "motorbike buffer", "porch seating"]},
+  {"type": "side", "features": ["linear planter", "vertical green wall", "slim skylight"]}
+]
