@@ -27,6 +27,11 @@ public record DesignBrief(
         List<FloorRequirement> floorRequirements
 ) {
     public DesignBrief {
+        if (looksLikeReversedTownhouseDimensions(siteWidthMeters, siteDepthMeters)) {
+            double frontage = siteDepthMeters;
+            siteDepthMeters = siteWidthMeters;
+            siteWidthMeters = frontage;
+        }
         rooms = rooms == null ? List.of() : rooms;
         preferences = preferences == null ? List.of() : preferences;
         constraints = constraints == null ? List.of() : constraints;
@@ -112,6 +117,14 @@ public record DesignBrief(
                 adjacencyPreferences,
                 floorRequirements
         );
+    }
+
+
+    private static boolean looksLikeReversedTownhouseDimensions(double siteWidthMeters, double siteDepthMeters) {
+        return siteWidthMeters >= 12
+                && siteDepthMeters > 0
+                && siteDepthMeters <= 8
+                && siteWidthMeters / siteDepthMeters >= 1.6;
     }
 
     public record FloorRequirement(

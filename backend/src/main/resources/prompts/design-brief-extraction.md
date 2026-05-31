@@ -35,7 +35,7 @@ The JSON object must match this exact schema and use no extra keys:
 
 Rules:
 - Interpret Vietnamese housing terms, including unaccented Vietnamese.
-- Parse dimensions such as "5x20m", "dat 8x15m", or "lo dat rong 5m dai 20m" into siteWidthMeters and siteDepthMeters.
+- Parse dimensions such as "5x20m", "dat 8x15m", or "lo dat rong 5m dai 20m" into siteWidthMeters and siteDepthMeters. For compact Vietnamese townhouse shorthand like "5x20m", treat the first number as the street frontage/site width and the second as the lot depth. Only reverse this when the user explicitly says "dai ... rong ..." or clearly gives depth before width.
 - Use normalized English values for style when possible, for example "modern" or "traditional".
 - Use concise English room names in rooms, for example "living", "kitchen", "bedroom", "bathroom", "garage", "family room".
 - Put softer wishes such as "small front yard", "rear garden", "open kitchen", or "kitchen window" in preferences.

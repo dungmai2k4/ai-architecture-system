@@ -38,6 +38,48 @@ class FloorplanGeneratorTest {
                                 .anySatisfy(room -> assertThat(room.x()).isGreaterThan(0));
         }
 
+
+        @Test
+        void normalizesReversedTownhouseDimensionsBeforePlanning() {
+                DesignBrief brief = new DesignBrief(
+                                20,
+                                5,
+                                3,
+                                3,
+                                3,
+                                "modern",
+                                List.of("living", "kitchen", "bedroom"),
+                                List.of(),
+                                List.of());
+
+                Floorplan floorplan = generator.generate(brief);
+
+                assertThat(brief.siteWidthMeters()).isEqualTo(5);
+                assertThat(brief.siteDepthMeters()).isEqualTo(20);
+                assertThat(floorplan.siteWidth()).isEqualTo(5);
+                assertThat(floorplan.siteDepth()).isEqualTo(20);
+        }
+
+        @Test
+        void keepsLegendOutsidePlanCanvas() {
+                DesignBrief brief = new DesignBrief(
+                                5,
+                                20,
+                                2,
+                                3,
+                                2,
+                                "modern",
+                                List.of("living", "kitchen", "bedroom"),
+                                List.of(),
+                                List.of());
+
+                String svg = generator.generate(brief).floors().get(0).svg();
+
+                assertThat(svg).contains("viewBox='0 0 322 866'");
+                assertThat(svg).contains("<rect x='56' y='803' width='200' height='38'");
+                assertThat(svg).contains("class='opening-label'");
+        }
+
         @Test
         void addsElevatorCoreForFourOrMoreFloors() {
                 DesignBrief brief = new DesignBrief(
