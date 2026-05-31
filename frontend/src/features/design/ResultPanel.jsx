@@ -93,12 +93,13 @@ function ArchitecturalPackageSection({ designPackage }) {
   const style = designPackage.exteriorStyle;
   const landscape = designPackage.landscapePlan;
   const sections = designPackage.buildingSections ?? [];
+  const drawings = designPackage.architecturalDrawings;
 
   return (
     <div className="mt-4 rounded-2xl border border-sky-400/20 bg-sky-400/10 p-4">
       <h3 className="font-semibold text-sky-100">Gói thiết kế kiến trúc Việt Nam</h3>
       <p className="mt-1 text-sm text-sky-100/80">
-        Mở rộng từ mặt bằng sang typology, khí hậu, sân trong, mái, mặt cắt, mặt đứng và concept ngoại thất.
+        Mở rộng từ mặt bằng sang typology, khí hậu, sân trong và bản vẽ SVG thật cho ngoại thất, mái, mặt cắt, mặt đứng.
       </p>
 
       <div className="mt-3 grid gap-3 text-sm lg:grid-cols-2">
@@ -136,6 +137,81 @@ function ArchitecturalPackageSection({ designPackage }) {
           <KeyValue label="Phong cách" value={style?.name ?? "-"} />
           <KeyValue label="Vật liệu" value={formatList(style?.materialPalette)} />
           <KeyValue label="Cảnh quan" value={`${formatList(landscape?.frontLandscape)} · ${formatList(landscape?.courtyardLandscape)}`} />
+        </PackageCard>
+      </div>
+
+      {drawings && <ArchitecturalDrawingsSection drawings={drawings} />}
+    </div>
+  );
+}
+
+function ArchitecturalDrawingsSection({ drawings }) {
+  const sheets = [
+    drawings.exteriorPerspective,
+    drawings.roofPlan,
+    drawings.longitudinalSection,
+    drawings.frontElevation,
+  ].filter(Boolean);
+  const [activeSheetType, setActiveSheetType] = useState(sheets[0]?.drawingType ?? "");
+  const activeSheet = sheets.find((sheet) => sheet.drawingType === activeSheetType) ?? sheets[0];
+
+  if (!activeSheet) {
+    return null;
+  }
+
+  return (
+    <div className="mt-4 rounded-2xl border border-cyan-300/20 bg-black/10 p-3">
+      <div className="flex flex-col gap-2 md:flex-row md:items-start md:justify-between">
+        <div>
+          <h4 className="font-semibold text-cyan-50">Bản vẽ kiến trúc tự động</h4>
+          <p className="mt-1 text-sm text-cyan-100/75">
+            Hệ thống tạo SVG có hình học và callout cho ngoại thất, mái, mặt cắt, mặt đứng thay vì chỉ mô tả bằng chữ.
+          </p>
+        </div>
+        <span className="rounded-full border border-cyan-200/20 px-3 py-1 text-xs text-cyan-100/80">
+          {activeSheet.scale}
+        </span>
+      </div>
+
+      <div className="mt-3 flex flex-wrap gap-2">
+        {sheets.map((sheet) => (
+          <button
+            key={sheet.drawingType}
+            type="button"
+            onClick={() => setActiveSheetType(sheet.drawingType)}
+            className={`rounded border px-3 py-1 text-sm ${
+              activeSheet.drawingType === sheet.drawingType
+                ? "border-white bg-white text-neutral-950"
+                : "border-white/10 bg-white/[0.04] text-cyan-100 hover:bg-white/10"
+            }`}
+          >
+            {sheet.title}
+          </button>
+        ))}
+      </div>
+
+      <div className="mt-3 overflow-auto rounded-2xl border border-white/10 bg-white p-2">
+        <img
+          src={toSvgDataUrl(activeSheet.svg)}
+          alt={activeSheet.title}
+          className="mx-auto h-auto max-h-[72vh] min-w-[680px] rounded-xl border border-neutral-200 bg-slate-50 object-contain"
+        />
+      </div>
+
+      <div className="mt-3 grid gap-3 lg:grid-cols-[1.2fr_0.8fr]">
+        <PackageCard title="Callout bản vẽ">
+          {(activeSheet.callouts ?? []).map((callout) => (
+            <p key={callout} className="border-b border-white/10 pb-2 text-sm text-neutral-100">
+              {callout}
+            </p>
+          ))}
+        </PackageCard>
+        <PackageCard title="Ghi chú xuất bản vẽ">
+          {(drawings.drawingNotes ?? []).map((note) => (
+            <p key={note} className="border-b border-white/10 pb-2 text-sm text-neutral-100">
+              {note}
+            </p>
+          ))}
         </PackageCard>
       </div>
     </div>
